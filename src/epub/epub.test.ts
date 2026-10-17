@@ -1,0 +1,246 @@
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { deflateRawSync, inflateRawSync } from 'node:zlib';
+import { Book, buildEpub } from './book';
+import { escapeXml } from './xml';
+import { createZip, crc32 } from './zip';
+
+const deflate = (data: Uint8Array) => new Uint8Array(deflateRawSync(data));
+const decoder = new TextDecoder();
+
+interface ReadEntry {
+	path: string;
+	method: number;
+	data: Uint8Array;
+}
+
+/** Reads a ZIP through its central directory, checking every CRC. */
+function readZip(zip: Uint8Array): ReadEntry[] {
+	const view = new DataView(zip.buffer, zip.byteOffset, zip.byteLength);
+	const end = zip.length - 22;
+	assert.equal(view.getUint32(end, true), 0x06054b50);
+	const count = view.getUint16(end + 10, true);
+	let pos = view.getUint32(end + 16, true);
+	const entries: ReadEntry[] = [];
+	for (let i = 0; i < count; i++) {
+		assert.equal(view.getUint32(pos, true), 0x02014b50);
+		const method = view.getUint16(pos + 10, true);
+		const crc = view.getUint32(pos + 16, true);
+		const size = view.getUint32(pos + 24, true);
+		const nameLength = view.getUint16(pos + 28, true);
+		const offset = view.getUint32(pos + 42, true);
+		const path = decoder.decode(zip.subarray(pos + 46, pos + 46 + nameLength));
+		pos += 46 + nameLength;
+
+		assert.equal(view.getUint32(offset, true), 0x04034b50);
+		const localName = view.getUint16(offset + 26, true);
+		const localExtra = view.getUint16(offset + 28, true);
+		const start = offset + 30 + localName + localExtra;
+		const stored = zip.subarray(start, start + view.getUint32(offset + 18, true));
+		const data = method === 8 ? new Uint8Array(inflateRawSync(stored)) : stored;
+		assert.equal(data.length, size, path);
+		assert.equal(crc32(data), crc, path);
+		entries.push({ path, method, data });
+	}
+	return entries;
+}
+
+function textOf(entries: ReadEntry[], path: string): string {
+	const entry = entries.find((e) => e.path === path);
+	assert.ok(entry, `missing ${path}`);
+	return decoder.decode(entry.data);
+}
+
+const BOOK: Book = {
+	id: '6f1c2a52-8d0e-4c51-9b7e-0d3c2b1a9f00',
+	title: 'My Songbook',
+	author: 'Obsidian',
+	language: 'en',
+	modified: new Date('2026-10-17T12:34:56.789Z'),
+	cover: { bytes: new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]), mediaType: 'image/jpeg' },
+	layout: 'cards',
+	songs: [
+		{
+			title: 'Armstrong - What a Wonderful World',
+			titleLines: ['Armstrong', 'What a Wonderful World'],
+			sections: [
+				{ name: 'Verse 1', lines: ['C Em', 'I see trees of green', '', 'F <Em>'] },
+				{ name: 'Chorus', lines: ['G'] },
+			],
+		},
+		{
+			title: 'Tom & Jerry',
+			titleLines: ['Tom & Jerry'],
+			sections: [{ name: 'Intro', lines: ['A'] }],
+		},
+	],
+	titleFont: 'Playfair Display',
+	contentFont: 'Lora',
+	fonts: [
+		{ family: 'Lora', weight: 400, format: 'ttf', bytes: new Uint8Array(500).buffer },
+		{
+			family: 'Playfair Display',
+			weight: 700,
+			format: 'ttf',
+			bytes: new Uint8Array(500).buffer,
+		},
+	],
+	sectionTitleScale: 2,
+	songTitleScale: 1.5,
+};
+
+describe('crc32', () => {
+	it('matches the standard check value', () => {
+		assert.equal(crc32(new TextEncoder().encode('123456789')), 0xcbf43926);
+	});
+});
+
+describe('createZip', () => {
+	it('round-trips stored and deflated entries in order', () => {
+		const text = new TextEncoder().encode('hello '.repeat(100));
+		const zip = createZip(
+			[
+				{ path: 'a.txt', data: text, compress: false },
+				{ path: 'dir/b.txt', data: text },
+				{ path: 'empty', data: new Uint8Array() },
+			],
+			deflate,
+			new Date(2026, 9, 17, 20, 4, 0),
+		);
+		const entries = readZip(zip);
+		assert.deepEqual(
+			entries.map((e) => [e.path, e.method]),
+			[
+				['a.txt', 0],
+				['dir/b.txt', 8],
+				['empty', 0],
+			],
+		);
+		assert.deepEqual(entries[1]?.data, text);
+	});
+});
+
+describe('escapeXml', () => {
+	it('escapes markup and drops invalid control characters', () => {
+		assert.equal(escapeXml(`<a href="x">Tom & 'J'</a>\u0007`), '&lt;a href=&quot;x&quot;&gt;Tom &amp; &apos;J&apos;&lt;/a&gt;');
+	});
+});
+
+describe('buildEpub', () => {
+	const entries = readZip(buildEpub(BOOK, deflate));
+	const opf = textOf(entries, 'OEBPS/content.opf');
+
+	it('starts with an uncompressed mimetype entry', () => {
+		assert.equal(entries[0]?.path, 'mimetype');
+		assert.equal(entries[0]?.method, 0);
+		assert.equal(decoder.decode(entries[0]?.data), 'application/epub+zip');
+		assert.match(textOf(entries, 'META-INF/container.xml'), /full-path="OEBPS\/content.opf"/);
+	});
+
+	it('writes the metadata', () => {
+		assert.match(opf, /<dc:identifier id="book-id">urn:uuid:6f1c2a52-8d0e-4c51-9b7e-0d3c2b1a9f00</);
+		assert.match(opf, /<dc:title>My Songbook<\/dc:title>/);
+		assert.match(opf, /<dc:creator>Obsidian<\/dc:creator>/);
+		assert.match(opf, /<dc:language>en<\/dc:language>/);
+		assert.match(opf, /<meta property="dcterms:modified">2026-10-17T12:34:56Z<\/meta>/);
+		assert.match(opf, /<meta name="cover" content="cover-image"\/>/);
+	});
+
+	it('omits the creator when the author is empty', () => {
+		const book = { ...BOOK, author: '' };
+		const opf = textOf(readZip(buildEpub(book, deflate)), 'OEBPS/content.opf');
+		assert.doesNotMatch(opf, /dc:creator/);
+	});
+
+	it('puts the cover, then each song and its sections in the spine', () => {
+		const spine = [...opf.matchAll(/<itemref idref="([^"]+)"/g)].map((m) => m[1]);
+		assert.deepEqual(spine, [
+			'cover',
+			'song-001',
+			'song-001-01',
+			'song-001-01-content',
+			'song-001-02',
+			'song-001-02-content',
+			'song-002',
+			'song-002-01',
+			'song-002-01-content',
+		]);
+		assert.match(
+			opf,
+			/<item id="cover-image" href="images\/cover.jpg" media-type="image\/jpeg" properties="cover-image"\/>/,
+		);
+		assert.match(opf, /<item id="song-001" href="text\/song-001.xhtml" media-type="application\/xhtml\+xml" properties="svg"\/>/);
+	});
+
+	it('has no cover when there is none', () => {
+		const entries = readZip(buildEpub({ ...BOOK, cover: null }, deflate));
+		const opf = textOf(entries, 'OEBPS/content.opf');
+		assert.doesNotMatch(opf, /cover/);
+		assert.ok(!entries.some((e) => e.path.includes('cover')));
+	});
+
+	it('lists only song titles in both tables of contents', () => {
+		const nav = textOf(entries, 'OEBPS/nav.xhtml');
+		const navLinks = [...nav.matchAll(/<a href="([^"]+)">([^<]+)</g)].map((m) => [m[1], m[2]]);
+		assert.deepEqual(navLinks, [
+			['text/song-001.xhtml', 'Armstrong - What a Wonderful World'],
+			['text/song-002.xhtml', 'Tom &amp; Jerry'],
+		]);
+		const ncx = textOf(entries, 'OEBPS/toc.ncx');
+		assert.equal([...ncx.matchAll(/<navPoint /g)].length, 2);
+		assert.match(ncx, /<meta name="dtb:uid" content="urn:uuid:6f1c2a52/);
+	});
+
+	it('renders the song title on two lines', () => {
+		const page = textOf(entries, 'OEBPS/text/song-001.xhtml');
+		assert.match(page, /<span class="title-line">Armstrong<\/span>\n<span class="title-line">What a Wonderful World<\/span>/);
+		assert.match(page, /<svg /);
+		assert.match(page, /xml:lang="en"/);
+	});
+
+	it('renders section titles and escaped content lines with gaps', () => {
+		assert.match(
+			textOf(entries, 'OEBPS/text/song-001-01.xhtml'),
+			/<h2 class="section-title">Verse 1<\/h2>/,
+		);
+		const content = textOf(entries, 'OEBPS/text/song-001-01-content.xhtml');
+		assert.match(
+			content,
+			/<p class="line">C Em<\/p>\n<p class="line">I see trees of green<\/p>\n<p class="line gap">&#160;<\/p>\n<p class="line">F &lt;Em&gt;<\/p>/,
+		);
+	});
+
+	it('embeds the fonts and sizes titles from the multipliers', () => {
+		assert.match(opf, /<item id="font-lora-400" href="fonts\/lora-400.ttf" media-type="font\/ttf"\/>/);
+		assert.ok(entries.some((e) => e.path === 'OEBPS/fonts/playfair-display-700.ttf'));
+		const css = textOf(entries, 'OEBPS/styles/book.css');
+		assert.match(css, /font-family: "Lora";\n\tfont-style: normal;\n\tfont-weight: 400;\n\tsrc: url\("..\/fonts\/lora-400.ttf"\) format\("truetype"\);/);
+		assert.match(css, /\.song-title \{\n\tfont-size: 3em;/);
+		assert.match(css, /\.section-title \{\n\tfont-size: 2em;/);
+	});
+});
+
+describe('buildEpub in book layout', () => {
+	const entries = readZip(buildEpub({ ...BOOK, layout: 'book' }, deflate));
+	const opf = textOf(entries, 'OEBPS/content.opf');
+
+	it('puts each song on one page', () => {
+		const spine = [...opf.matchAll(/<itemref idref="([^"]+)"/g)].map((m) => m[1]);
+		assert.deepEqual(spine, ['cover', 'song-001', 'song-002']);
+		assert.ok(!entries.some((e) => e.path.includes('song-001-01')));
+		assert.match(opf, /<item id="song-001" href="text\/song-001.xhtml" media-type="application\/xhtml\+xml" properties="svg"\/>/);
+	});
+
+	it('runs the titles and content together', () => {
+		const page = textOf(entries, 'OEBPS/text/song-001.xhtml');
+		assert.match(page, /<body class="song" epub:type="chapter">/);
+		assert.match(page, /<span class="title-line">What a Wonderful World<\/span>\n<\/h1>\n<\/div>\n<div class="section">\n<h2 class="section-title">Verse 1<\/h2>\n<div class="content">\n<p class="line">C Em<\/p>/);
+		assert.match(page, /<h2 class="section-title">Chorus<\/h2>\n<div class="content">\n<p class="line">G<\/p>/);
+	});
+
+	it('keeps the table of contents pointing at the songs', () => {
+		const nav = textOf(entries, 'OEBPS/nav.xhtml');
+		assert.match(nav, /<a href="text\/song-001.xhtml">/);
+		assert.match(nav, /<a href="text\/song-002.xhtml">/);
+	});
+});

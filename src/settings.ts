@@ -1,20 +1,8 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
-import SongExportPlugin from './main';
-
-export const FONTS = [
-	'Playfair Display',
-	'Lora',
-	'Merriweather',
-	'EB Garamond',
-	'Libre Baskerville',
-	'Crimson Pro',
-	'Source Serif 4',
-	'Nunito',
-	'Open Sans',
-	'Montserrat',
-] as const;
-
-export type FontName = (typeof FONTS)[number];
+import { PageLayout } from './epub/book';
+import { FontName, FONTS } from './fonts/catalog';
+import type SongExportPlugin from './main';
+import { FontPreview } from './ui/font-preview';
 
 export const LANGUAGES = [
 	'cs',
@@ -48,10 +36,13 @@ export interface SongExportSettings {
 	titleSplitSequence: string;
 	coverImage: CoverImage;
 	coverImagePath: string;
+	pageLayout: PageLayout;
 	titleFont: FontName;
 	contentFont: FontName;
 	sectionTitleScale: number;
 	songTitleScale: number;
+	/** Stable EPUB identifier, generated on first load. Not shown in the UI. */
+	bookId: string;
 }
 
 export const DEFAULT_SETTINGS: SongExportSettings = {
@@ -64,14 +55,17 @@ export const DEFAULT_SETTINGS: SongExportSettings = {
 	titleSplitSequence: ' - ',
 	coverImage: 'default',
 	coverImagePath: '',
+	pageLayout: 'cards',
 	titleFont: 'Playfair Display',
 	contentFont: 'Lora',
 	sectionTitleScale: 2,
 	songTitleScale: 2,
+	bookId: '',
 };
 
 export class SongExportSettingTab extends PluginSettingTab {
 	plugin: SongExportPlugin;
+	private preview: FontPreview | null = null;
 
 	constructor(app: App, plugin: SongExportPlugin) {
 		super(app, plugin);
@@ -125,6 +119,7 @@ export class SongExportSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						// Not trimmed: surrounding spaces are part of the sequence.
 						this.plugin.settings.titleSplitSequence = value;
+						void this.preview?.render();
 						await this.plugin.saveSettings();
 					}),
 			);
@@ -151,6 +146,22 @@ export class SongExportSettingTab extends PluginSettingTab {
 			);
 		}
 
+		new Setting(containerEl)
+			.setName('Page layout')
+			.setDesc(
+				'Flash cards put every song title, section title and section on its own page. Book starts each song on a new page and runs its titles and content together.',
+			)
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption('cards', 'Flash cards')
+					.addOption('book', 'Book')
+					.setValue(this.plugin.settings.pageLayout)
+					.onChange(async (value) => {
+						this.plugin.settings.pageLayout = value as PageLayout;
+						await this.plugin.saveSettings();
+					}),
+			);
+
 		this.addFont(
 			'Title font',
 			'Used for song and section titles.',
@@ -168,6 +179,17 @@ export class SongExportSettingTab extends PluginSettingTab {
 			'Multiplier of the section title size.',
 			'songTitleScale',
 		);
+
+		this.preview = new FontPreview(
+			containerEl,
+			this.plugin.previewFonts,
+			() => this.plugin.settings,
+		);
+		void this.preview.render();
+	}
+
+	hide(): void {
+		this.preview = null;
 	}
 
 	private addText(
@@ -209,6 +231,7 @@ export class SongExportSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings[key])
 					.onChange(async (value) => {
 						this.plugin.settings[key] = value as FontName;
+						void this.preview?.render();
 						await this.plugin.saveSettings();
 					});
 			});
@@ -229,6 +252,7 @@ export class SongExportSettingTab extends PluginSettingTab {
 					.setDynamicTooltip()
 					.onChange(async (value) => {
 						this.plugin.settings[key] = value;
+						void this.preview?.render();
 						await this.plugin.saveSettings();
 					}),
 			);

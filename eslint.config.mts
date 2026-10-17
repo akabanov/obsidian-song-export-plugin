@@ -6,6 +6,8 @@ export default defineConfig(
 	globalIgnores([
 		'node_modules',
 		'dist',
+		'.test-build',
+		'scripts',
 		'esbuild.config.mjs',
 		'version-bump.mjs',
 		'versions.json',
@@ -29,4 +31,17 @@ export default defineConfig(
 		},
 	},
 	...obsidianmd.configs.recommended,
+	{
+		rules: {
+			'obsidianmd/ui/sentence-case': ['warn', { acronyms: ['EPUB'] }],
+		},
+	},
+	{
+		// Unit tests run in Node with its built-in test runner, not in Obsidian.
+		files: ['src/**/*.test.ts'],
+		rules: {
+			'@typescript-eslint/no-floating-promises': 'off',
+			'obsidianmd/no-nodejs-modules': 'off',
+		},
+	},
 );

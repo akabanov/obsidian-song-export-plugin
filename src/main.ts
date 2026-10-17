@@ -1,4 +1,7 @@
-import { addIcon, Notice, Plugin } from 'obsidian';
+import { addIcon, Plugin } from 'obsidian';
+import { exportSongs } from './export/exporter';
+import { FontCache } from './fonts/cache';
+import { PreviewFonts } from './fonts/preview-faces';
 import {
 	DEFAULT_SETTINGS,
 	SongExportSettings,
@@ -21,9 +24,17 @@ const RIBBON_ICON_SVG = `<g transform="scale(4.1667)" fill="none" stroke="curren
 
 export default class SongExportPlugin extends Plugin {
 	settings!: SongExportSettings;
+	fontCache!: FontCache;
+	previewFonts!: PreviewFonts;
+	private exporting = false;
 
 	async onload() {
 		await this.loadSettings();
+
+		const pluginDir =
+			this.manifest.dir ?? `${this.app.vault.configDir}/plugins/${this.manifest.id}`;
+		this.fontCache = new FontCache(this.app.vault.adapter, `${pluginDir}/fonts`);
+		this.previewFonts = new PreviewFonts(this.fontCache);
 
 		addIcon(RIBBON_ICON, RIBBON_ICON_SVG);
 		this.addRibbonIcon(RIBBON_ICON, 'Export songs to EPUB', () => {
@@ -41,9 +52,18 @@ export default class SongExportPlugin extends Plugin {
 		this.addSettingTab(new SongExportSettingTab(this.app, this));
 	}
 
+	onunload() {
+		this.previewFonts.unload();
+	}
+
 	async exportSongs() {
-		// TODO: implement the export described in SPEC.md.
-		new Notice('Song export is not implemented yet.');
+		if (this.exporting) return;
+		this.exporting = true;
+		try {
+			await exportSongs(this.app, this.settings, this.fontCache);
+		} finally {
+			this.exporting = false;
+		}
 	}
 
 	async loadSettings() {
@@ -52,6 +72,10 @@ export default class SongExportPlugin extends Plugin {
 			DEFAULT_SETTINGS,
 			(await this.loadData()) as Partial<SongExportSettings>,
 		);
+		if (!this.settings.bookId) {
+			this.settings.bookId = crypto.randomUUID();
+			await this.saveSettings();
+		}
 	}
 
 	async saveSettings() {

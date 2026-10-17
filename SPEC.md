@@ -1,6 +1,6 @@
 # Song Export — Specification
 
-An Obsidian plugin that exports song notes from the vault into a single EPUB songbook for learning and practice. Every song starts with a title page. Each of its sections then gets its own title page, followed by that section's content.
+An Obsidian plugin that exports song notes from the vault into a single EPUB songbook for learning and practice. Every song starts on a new page. In the default *flash cards* layout, the song and each of its sections get their own title pages, and each section's content gets its own page; the *book* layout runs a song's titles and content together (see [Page layout](#page-layout)).
 
 ## Platform
 
@@ -17,7 +17,10 @@ Both run the same export:
 1. If the output file already exists, a confirmation dialog asks whether to overwrite it. Cancelling stops the export without changing anything.
 2. While the export runs, a notice says so.
 3. When it finishes, a notice reports the output path, how many songs were exported and how many were skipped. Skipped songs and the reason for each are written to the developer console.
+   If no songs are found, the export fails with an error notice and no file is written.
 4. On failure (path not writable, font download failed, etc.) a notice shows the error and no partial file is left behind: the book is written to a temporary file in the target directory and then renamed over the target.
+
+Starting an export while one is running does nothing.
 
 ## Settings
 
@@ -25,13 +28,14 @@ Both run the same export:
 |---|---|---|
 | Songs directory | empty (vault root) | Vault-relative path, searched recursively. |
 | Code block name | `chords` | Info string of the code blocks that hold song content. Empty means the default. |
-| Output file | `~/Documents/my-songs.epub` | Absolute path; a leading `~` expands to the user's home directory. Missing parent directories are created. |
+| Output file | `~/Documents/my-songs.epub` | Absolute path; a leading `~` expands to the user's home directory. Missing parent directories are created. A relative path fails the export with an error notice. |
 | Book title | `My Songbook` | EPUB `dc:title`. |
 | Book author | `Obsidian` | EPUB `dc:creator`; omitted when empty. |
 | Book language | `EN` | Dropdown, sorted alphabetically: `CS`, `DE`, `EN`, `ES`, `FR`, `IT`, `JA`, `KO`, `NL`, `PL`, `PT`, `RU`, `SV`, `UK`, `ZH`. Written to EPUB `dc:language` and `xml:lang` as the lowercase code (`en`). |
 | Title split sequence | ` - ` (space, hyphen, space) | Where the song title is split into two lines. Empty means never split. |
 | Cover image | Default | Dropdown: *None*, *Default* (the bundled cover) or *Custom image*. |
-| Cover image path | empty | Shown only for *Custom image*. JPEG, PNG or WebP. A path starting with `/` or `~` is a filesystem path; anything else is relative to the vault root. |
+| Cover image path | empty | Shown only for *Custom image*. JPEG, PNG or WebP, detected from the file contents. A path starting with `/` or `~` is a filesystem path; anything else is relative to the vault root. |
+| Page layout | Flash cards | Dropdown: *Flash cards* or *Book*. See [Page layout](#page-layout). |
 | Title font | `Playfair Display` | Used for the song title and the section title. |
 | Content font | `Lora` | Used for song content. |
 | Section title size | `2` | Multiplier of the content font size. |
@@ -45,9 +49,9 @@ The output is one EPUB 3 file containing all songs (with an EPUB 2 NCX for older
 
 The book TOC (`nav.xhtml` and `toc.ncx`) lists only song titles — no section entries. Each TOC entry links to the song's title page.
 
-Songs are ordered alphabetically by note title (case-insensitive, locale-aware).
+Songs are ordered alphabetically by note title (case-insensitive, locale-aware). Letters that differ only in case sort together; letters that differ in accents don't.
 
-The EPUB has a stable `dc:identifier` (a UUID generated once and stored in plugin data) so readers recognise a re-export as the same book, and a `dcterms:modified` timestamp updated on every export.
+The EPUB has a stable `dc:identifier` (a UUID generated once and stored in plugin data as a hidden `bookId` setting) so readers recognise a re-export as the same book, and a `dcterms:modified` timestamp updated on every export.
 
 ### Cover
 
@@ -59,15 +63,31 @@ When there is a cover, it is declared in the OPF manifest with `properties="cove
 
 ### Page layout
 
+The *Page layout* setting picks one of two layouts. In both, every song starts on a new page, and the cover (if any) comes first.
+
+**Flash cards** (default): for drilling one section at a time.
+
 - **Song title page:** one page per song.
 - **Section title page:** one page per section.
 - **Section content:** starts on a new page after its section title page. Content that fits on one page is centered vertically. Longer content starts at the top and flows over as many pages as it needs.
 
 Each title page and each section's content is a separate XHTML file in the spine, so every one starts on a new page in every reader.
 
+**Book:** for reading a song straight through.
+
+- Each song is one XHTML file in the spine, so it starts on a new page.
+- The song title (with its icon) is centered horizontally at the top of the page, not vertically. The sections follow without page breaks: each section title, left-aligned, then its content.
+- A section title is kept on the same page as the start of its content where the reader supports it (`page-break-after: avoid`).
+
+Both layouts use the same fonts, sizes, title split and TOC (one entry per song, linking to the page where the song starts).
+
 ## Discovering the songs
 
 A **song note** is a Markdown file under the songs directory (any depth) that contains at least one fenced code block whose info string is the *Code block name* setting (`chords` by default), fenced with ```` ``` ```` or `~~~`. Below, "`chords` block" means such a block.
+
+Fences follow CommonMark: the info string matches when its first word equals the block name (```` ```chords extra ```` matches, ```` ```chordsx ```` doesn't). A block is closed by a fence of the same character that is at least as long as the opening one, and an unclosed block runs to the end of the note. A fence nested inside a block of another type (for example a `markdown` block showing a `chords` example) doesn't count.
+
+If the songs directory doesn't exist, the export fails with an error notice.
 
 Code blocks of other types (`metronome`, `alphatex`, …) and all text outside `chords` blocks are ignored.
 
@@ -75,7 +95,7 @@ Code blocks of other types (`metronome`, `alphatex`, …) and all text outside `
 
 The **song title** is the note's file name without the `.md` extension.
 
-The song title page shows only the song title, split into two lines at the first occurrence of the title split sequence. With the default ` - `, `Armstrong - What a Wonderful World` becomes `Armstrong` on line one and `What a Wonderful World` on line two. If the title doesn't contain the sequence, or the sequence is empty, the title is shown on one line. Both lines use the same font and size. The TOC entry uses the full, unsplit title.
+The song title page shows only the song title, split into two lines at the first occurrence of the title split sequence. With the default ` - `, `Armstrong - What a Wonderful World` becomes `Armstrong` on line one and `What a Wonderful World` on line two. If the title doesn't contain the sequence, the sequence is empty, or splitting would leave one of the lines empty (e.g. ` - Intro`), the title is shown on one line. Both parts are trimmed. Both lines use the same font and size. The TOC entry uses the full, unsplit title.
 
 The text is centered both vertically and horizontally. A static black-and-white icon (an inline SVG music note bundled with the plugin) sits above the title, so a song title page can be told apart from a section title page at a glance.
 
@@ -85,7 +105,7 @@ Only the content of the `chords` code blocks is exported. A song note may have m
 
 Songs are divided into sections by section headers in square brackets: `[Verse]`, `[Verse 2]`, `[Intro]`, etc.
 
-A line is a section header when it matches `^\s*\[[^\[\]]+\]\s*$`: it starts with `[`, ends with the matching `]`, and has non-empty text between them with no further brackets. Whitespace before the `[` or after the `]` is ignored. Any non-whitespace character after the closing bracket makes it a regular line. For example, `[1.] 1 1 5 5` and `[Guitar Tabs](https://…)` are regular lines, and `[]` is a regular line.
+A line is a section header when it matches `^\s*\[[^\[\]]+\]\s*$`: it starts with `[`, ends with the matching `]`, and has non-empty text between them with no further brackets. Whitespace before the `[` or after the `]` is ignored. Any non-whitespace character after the closing bracket makes it a regular line. For example, `[1.] 1 1 5 5` and `[Guitar Tabs](https://…)` are regular lines, and `[]` is a regular line. So is a header whose text is only whitespace, such as `[   ]`, because its name would be empty.
 
 The section name is the text between the brackets, trimmed, without the brackets.
 
@@ -108,6 +128,8 @@ After that:
 
 Trimming and collapsing whitespace (steps 1 and 5), together with proportional fonts, means chords no longer line up over the syllables they belong to. This is a deliberate trade-off for readability.
 
+A line that consists only of hints (e.g. `%t`) becomes an empty line in step 2, and is then handled by steps 6 and 7.
+
 If a section is empty after pre-processing, it is not included.
 
 If a song has no sections, or only empty ones, it is not included in the book and is reported as skipped.
@@ -122,7 +144,7 @@ The content block is centered vertically on the page; the lines inside it stay l
 
 ### Vertical centering
 
-Title pages and section content are centered vertically the same way. Each page's body is a flex column with `justify-content: center` and a `min-height` of one screen. The height is `100vh` minus the page's own vertical margins and padding, so that it doesn't spill a blank page.
+In the flash cards layout, title pages and section content are centered vertically the same way. Each page's body is a flex column with `justify-content: center` and a `min-height` of one screen. The height is `100vh` minus the page's own vertical margins and padding, so that it doesn't spill a blank page. The book layout isn't centered vertically.
 
 - It uses `min-height`, not `height`, so content longer than one screen grows past it and flows from the top over the following pages instead of being clipped.
 - Readers that don't support `vh` units or flexbox in paginated mode (some older e-ink readers) fall back to top-aligned text. The book stays readable there, just not centered.
@@ -146,7 +168,9 @@ Song content, song titles and section titles use non-monospaced fonts. Each font
 
 By default, the song title and section title use the same font, which differs from the content font.
 
-The selected fonts are embedded in the EPUB as TTF or WOFF2 files, declared in the OPF manifest and referenced through `@font-face`. Only the weights actually used are embedded: regular (400) for content and bold (700) for titles. Font files are downloaded from Google Fonts the first time a font is used and cached in the plugin's folder, so later exports work offline. If a font cannot be downloaded, the export fails with an error notice.
+The selected fonts are embedded in the EPUB as TTF or WOFF2 files, declared in the OPF manifest and referenced through `@font-face`. Only the weights actually used are embedded: regular (400) for content and bold (700) for titles. Font files are downloaded from Google Fonts the first time a font is used and cached in the plugin's folder (`<plugin folder>/fonts/`), so later exports work offline. If a font cannot be downloaded, the export fails with an error notice.
+
+The download asks the Google Fonts CSS API (`css2?family=<name>:wght@<weight>`) for the font with a non-browser `User-Agent`. Google then returns one complete TTF file. For a browser user agent it returns several WOFF2 files, each covering a subset of characters. If the response doesn't name exactly one font file, the download fails rather than embed a font with missing characters.
 
 ### Font preview
 
@@ -165,7 +189,7 @@ The settings tab shows a live preview panel directly below the font and size set
 **Font loading.**
 
 - The preview uses the same cached font files as the export, loaded into Obsidian with the `FontFace` API, so the preview shows exactly what will be embedded.
-- Selecting a font that isn't cached yet downloads it straight away, with a "Loading font…" note in the panel. This moves the first-use download from export time to selection time.
+- Selecting a font that isn't cached yet downloads it straight away, with a "Loading font…" note in the panel. The note appears only if loading takes more than a moment, so cached fonts don't make it flash. This moves the first-use download from export time to selection time.
 - If the download fails (e.g. offline), that part of the sample falls back to the theme font, and the panel says the font couldn't be loaded. The setting is still saved; the export will try the download again.
 - Loaded `FontFace`s are removed from the document when the plugin unloads.
 
