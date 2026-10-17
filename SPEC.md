@@ -50,7 +50,7 @@ The EPUB has a stable `dc:identifier` (a UUID generated once and stored in plugi
 
 - **Song title page:** one page per song.
 - **Section title page:** one page per section.
-- **Section content:** starts on a new page after its section title page and flows over as many pages as it needs.
+- **Section content:** starts on a new page after its section title page. Content that fits on one page is centered vertically. Longer content starts at the top and flows over as many pages as it needs.
 
 Each title page and each section's content is a separate XHTML file in the spine, so every one starts on a new page in every reader.
 
@@ -106,7 +106,14 @@ The section title page shows only the section name, centered both vertically and
 
 The section content shows the pre-processed lines in order. Each line is its own line in the output, and empty lines are kept as vertical gaps. Long lines wrap. All text is HTML-escaped.
 
-Vertical centering of title pages uses flexbox with `min-height: 100vh`, and falls back to top-aligned text in readers that don't support it.
+The content block is centered vertically on the page; the lines inside it stay left-aligned.
+
+### Vertical centering
+
+Title pages and section content are centered vertically the same way. Each page's body is a flex column with `justify-content: center` and a `min-height` of one screen. The height is `100vh` minus the page's own vertical margins and padding, so that it doesn't spill a blank page.
+
+- It uses `min-height`, not `height`, so content longer than one screen grows past it and flows from the top over the following pages instead of being clipped.
+- Readers that don't support `vh` units or flexbox in paginated mode (some older e-ink readers) fall back to top-aligned text. The book stays readable there, just not centered.
 
 ## Typography
 
