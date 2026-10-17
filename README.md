@@ -71,15 +71,54 @@ npm run lint
 
 To try a local build, symlink or copy `main.js`, `manifest.json` and `styles.css` into `<vault>/.obsidian/plugins/song-export/`.
 
-Releases are published by the **Release Obsidian plugin** workflow. Run it from the repository's **Actions** tab (**Run workflow**), or from a terminal:
+## Releasing
+
+Releases are built and published by the [**Release Obsidian plugin**](.github/workflows/release.yml) GitHub Actions workflow. You never need to edit version numbers by hand.
+
+### Start a release
+
+From GitHub: open the **Actions** tab, select **Release Obsidian plugin**, then select **Run workflow**, enter a version and confirm.
+
+From a terminal, with the [GitHub CLI](https://cli.github.com/):
 
 ```bash
 gh workflow run release.yml                          # next beta, e.g. 0.1.0-beta.1 → 0.1.0-beta.2
 gh workflow run release.yml -f version=0.2.0-beta.1  # a specific version
 gh workflow run release.yml -f version=minor         # a stable release, e.g. 0.1.0 → 0.2.0
+gh run watch                                         # follow the run
 ```
 
-The workflow tests and lints the code, bumps the version in `package.json`, `manifest.json` and `versions.json`, commits and tags the bump on `main`, and publishes a GitHub release with `main.js`, `manifest.json` and `styles.css`. Versions with a `-beta.N` suffix are published as pre-releases, which BRAT can install. Pushing a version tag by hand (`npm version <x.y.z> && git push --follow-tags`) publishes a release for that tag too.
+The `version` input takes an explicit version or an `npm version` keyword:
+
+| `version` | Example result | Release type |
+|---|---|---|
+| `prerelease` (default) | `0.1.0-beta.1` → `0.1.0-beta.2` | Pre-release |
+| `0.2.0-beta.1` | `0.2.0-beta.1` | Pre-release |
+| `prepatch`, `preminor`, `premajor` | `0.1.0` → `0.1.1-beta.0`, `0.2.0-beta.0`, `1.0.0-beta.0` | Pre-release |
+| `patch`, `minor`, `major` | `0.1.0` → `0.1.1`, `0.2.0`, `1.0.0` | Stable |
+| `0.2.0` | `0.2.0` | Stable |
+
+### What the workflow does
+
+1. Installs dependencies, runs the unit tests and the linter. A failure stops the release before anything is changed.
+2. Bumps the version in `package.json`, `manifest.json` and `versions.json`, commits it to `main` as `Release <version>` and tags it with the bare version (no leading `v`).
+3. Builds `main.js` and attests its build provenance.
+4. Publishes a GitHub release for the tag, with `main.js`, `manifest.json` and `styles.css` attached and notes generated from the commits. Versions with a pre-release suffix (`-beta.N`) are marked as pre-releases.
+
+BRAT picks up the new version on its next update check, or right away with **BRAT: Check for updates to all beta plugins**.
+
+After a release, run `git pull` so your local `main` has the version bump commit.
+
+### Release from a hand-made tag
+
+Pushing a version tag also publishes a release for that tag, without bumping anything:
+
+```bash
+npm version 0.2.0      # bumps package.json, manifest.json and versions.json, commits and tags
+git push --follow-tags
+```
+
+The tag must match the `version` in `manifest.json`, or the workflow fails.
 
 ## License
 
