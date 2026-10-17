@@ -1,0 +1,10 @@
+{
+	"id": "song-export",
+	"name": "Song Export",
+	"version": "0.1.0",
+	"minAppVersion": "1.0.0",
+	"description": "Export chord sheets from your vault into a flash-card style EPUB songbook.",
+	"author": "akabanov",
+	"authorUrl": "https://github.com/akabanov",
+	"isDesktopOnly": true
+}
