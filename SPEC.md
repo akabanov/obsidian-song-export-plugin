@@ -152,11 +152,11 @@ The selected fonts are embedded in the EPUB as TTF or WOFF2 files, declared in t
 
 The settings tab shows a live preview panel directly below the font and size settings, so a font can be judged before exporting.
 
-**Content.** The panel shows a fixed sample, styled exactly as in the book:
+**Content.** The panel shows a fixed sample from *Amazing Grace* (lyrics by John Newton, 1779; public domain), styled exactly as in the book:
 
-- a song title in the title font, bold, at the song title size, split into two lines with the current title split sequence (e.g. `Armstrong` / `What a Wonderful World`)
+- a song title in the title font, bold, at the song title size, built from the title `John Newton - Amazing Grace` and split with the current title split sequence (`John Newton` / `Amazing Grace` with the default)
 - a section title (`Verse 1`) in the title font, bold, at the section title size
-- two content lines in the content font, regular: a chord line and a lyric line, after pre-processing (e.g. `C Em F Em` and `I see trees of green, red roses too`)
+- two content lines in the content font, regular: a chord line and a lyric line, after pre-processing (`G G7 C G` and `Amazing grace! How sweet the sound`)
 
 **Sizing.** Sizes are relative to a fixed preview base size (Obsidian's `--font-text-size`), using the same multipliers as the book. A tall song title may make the panel scroll horizontally or wrap; it is never clipped.
 

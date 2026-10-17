@@ -11,10 +11,12 @@ Write songs as ordinary notes and put the playable part in a `chords` code block
 ````markdown
 ```chords
 [Verse 1]
-        C        Em    F         Em
-I see trees of green, red roses too
+   G              G7       C     G
+Amazing grace! How sweet the sound
+             G                 D
+That saved a wretch like me
 
-[Chorus]
+[Verse 2]
 ...
 ```
 ````
