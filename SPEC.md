@@ -37,7 +37,7 @@ Both run the same export:
 | Section title size | `2` | Multiplier of the content font size. |
 | Song title size | `2` | Multiplier of the **section title** size (so 4× content by default). Chaining sizes like this is the usual modular type scale. |
 
-Font settings are dropdowns over the curated list in [Typography](#typography).
+Font settings are dropdowns over the curated list in [Typography](#typography). A live preview sits below them; see [Font preview](#font-preview).
 
 ## Output
 
@@ -147,6 +147,27 @@ Song content, song titles and section titles use non-monospaced fonts. Each font
 By default, the song title and section title use the same font, which differs from the content font.
 
 The selected fonts are embedded in the EPUB as TTF or WOFF2 files, declared in the OPF manifest and referenced through `@font-face`. Only the weights actually used are embedded: regular (400) for content and bold (700) for titles. Font files are downloaded from Google Fonts the first time a font is used and cached in the plugin's folder, so later exports work offline. If a font cannot be downloaded, the export fails with an error notice.
+
+### Font preview
+
+The settings tab shows a live preview panel directly below the font and size settings, so a font can be judged before exporting.
+
+**Content.** The panel shows a fixed sample, styled exactly as in the book:
+
+- a song title in the title font, bold, at the song title size, split into two lines with the current title split sequence (e.g. `Armstrong` / `What a Wonderful World`)
+- a section title (`Verse 1`) in the title font, bold, at the section title size
+- two content lines in the content font, regular: a chord line and a lyric line, after pre-processing (e.g. `C Em F Em` and `I see trees of green, red roses too`)
+
+**Sizing.** Sizes are relative to a fixed preview base size (Obsidian's `--font-text-size`), using the same multipliers as the book. A tall song title may make the panel scroll horizontally or wrap; it is never clipped.
+
+**Updating.** The preview redraws immediately when either font, either size multiplier or the title split sequence changes.
+
+**Font loading.**
+
+- The preview uses the same cached font files as the export, loaded into Obsidian with the `FontFace` API, so the preview shows exactly what will be embedded.
+- Selecting a font that isn't cached yet downloads it straight away, with a "Loading font…" note in the panel. This moves the first-use download from export time to selection time.
+- If the download fails (e.g. offline), that part of the sample falls back to the theme font, and the panel says the font couldn't be loaded. The setting is still saved; the export will try the download again.
+- Loaded `FontFace`s are removed from the document when the plugin unloads.
 
 All sizes are in `em`, relative to the reader's base font size, so the reader's font-size control still scales everything:
 
