@@ -16,12 +16,34 @@ export const FONTS = [
 
 export type FontName = (typeof FONTS)[number];
 
+// English first, then alphabetical.
+export const LANGUAGES = [
+	'en',
+	'cs',
+	'de',
+	'es',
+	'fr',
+	'it',
+	'ja',
+	'ko',
+	'nl',
+	'pl',
+	'pt',
+	'ru',
+	'sv',
+	'uk',
+	'zh',
+] as const;
+
+export type Language = (typeof LANGUAGES)[number];
+
 export interface SongExportSettings {
 	songsDirectory: string;
 	outputFile: string;
 	bookTitle: string;
 	bookAuthor: string;
-	bookLanguage: string;
+	bookLanguage: Language;
+	titleSplitSequence: string;
 	titleFont: FontName;
 	contentFont: FontName;
 	sectionTitleScale: number;
@@ -31,9 +53,10 @@ export interface SongExportSettings {
 export const DEFAULT_SETTINGS: SongExportSettings = {
 	songsDirectory: '',
 	outputFile: '~/Documents/my-songs.epub',
-	bookTitle: 'My Songs',
-	bookAuthor: '',
+	bookTitle: 'My Songbook',
+	bookAuthor: 'Obsidian',
 	bookLanguage: 'en',
+	titleSplitSequence: ' - ',
 	titleFont: 'Playfair Display',
 	contentFont: 'Lora',
 	sectionTitleScale: 2,
@@ -63,8 +86,36 @@ export class SongExportSettingTab extends PluginSettingTab {
 			'outputFile',
 		);
 		this.addText('Book title', 'Shown by e-book readers.', 'bookTitle');
-		this.addText('Book author', 'Optional.', 'bookAuthor');
-		this.addText('Book language', 'Language code, e.g. en.', 'bookLanguage');
+		this.addText('Book author', 'Leave empty to omit.', 'bookAuthor');
+
+		new Setting(containerEl)
+			.setName('Book language')
+			.addDropdown((dropdown) => {
+				for (const lang of LANGUAGES) {
+					dropdown.addOption(lang, lang.toUpperCase());
+				}
+				dropdown
+					.setValue(this.plugin.settings.bookLanguage)
+					.onChange(async (value) => {
+						this.plugin.settings.bookLanguage = value as Language;
+						await this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(containerEl)
+			.setName('Title split sequence')
+			.setDesc(
+				'The song title is split into two lines at the first occurrence of this text. Leave empty to never split.',
+			)
+			.addText((text) =>
+				text
+					.setValue(this.plugin.settings.titleSplitSequence)
+					.onChange(async (value) => {
+						// Not trimmed: surrounding spaces are part of the sequence.
+						this.plugin.settings.titleSplitSequence = value;
+						await this.plugin.saveSettings();
+					}),
+			);
 
 		this.addFont(
 			'Title font',
@@ -92,8 +143,7 @@ export class SongExportSettingTab extends PluginSettingTab {
 			| 'songsDirectory'
 			| 'outputFile'
 			| 'bookTitle'
-			| 'bookAuthor'
-			| 'bookLanguage',
+			| 'bookAuthor',
 	): void {
 		new Setting(this.containerEl)
 			.setName(name)

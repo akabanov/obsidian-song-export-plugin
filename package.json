@@ -1,7 +1,7 @@
 {
 	"name": "obsidian-song-export-plugin",
 	"version": "0.1.0",
-	"description": "Obsidian plugin that exports chord sheets into a flash-card style EPUB songbook",
+	"description": "Obsidian plugin that exports chord sheets into an EPUB songbook",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
@@ -17,7 +17,7 @@
 		"chords",
 		"songbook"
 	],
-	"license": "UNLICENSED",
+	"license": "0BSD",
 	"devDependencies": {
 		"@eslint/js": "^9.39.4",
 		"@types/node": "^22.15.17",
