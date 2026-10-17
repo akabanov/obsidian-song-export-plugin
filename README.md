@@ -23,7 +23,8 @@ Click the songbook icon in the left ribbon, or run **Export songs to EPUB**, and
 
 - 📖 **Every song is a chapter**, opened by a clean title page (`Artist` over `Title`).
 - 🔖 **Every section gets its own title page**: `[Verse 1]`, `[Chorus]` and so on, with the lines on the pages that follow.
-- 🧹 **The clutter is gone**: tab lines, `--` separators, stray whitespace and empty sections are dropped. Everything outside `chords` blocks stays in your vault.
+- 🖼️ **It has a cover**: a bundled black-and-white illustration, your own image, or none.
+- 🧹 **The clutter is gone**: tab lines, `--` separators, `%t`-style rendering hints, stray whitespace and empty sections are dropped. Everything outside `chords` blocks stays in your vault.
 - ✍️ **It looks like a book**: you pick from 10 curated Google Fonts, they are embedded in the EPUB, and every size scales with your reader's font setting.
 - 🗂️ **The table of contents stays short**: songs only, in alphabetical order.
 
@@ -43,11 +44,13 @@ BRAT checks for new releases and updates the plugin for you. Song Export runs on
 | Setting | Default |
 |---|---|
 | Songs directory | vault root |
+| Code block name | `chords` |
 | Output file | `~/Documents/my-songs.epub` (asks before overwriting) |
 | Book title / author / language | My Songbook / Obsidian / EN |
 | Title split sequence | ` - ` |
+| Cover image | bundled default (or none, or your own image) |
 | Title / content font | Playfair Display / Lora |
-| Section / song title size | 2× content / 3× section |
+| Section / song title size | 2× content / 2× section |
 
 ## Development
 

@@ -16,11 +16,10 @@ export const FONTS = [
 
 export type FontName = (typeof FONTS)[number];
 
-// English first, then alphabetical.
 export const LANGUAGES = [
-	'en',
 	'cs',
 	'de',
+	'en',
 	'es',
 	'fr',
 	'it',
@@ -37,13 +36,18 @@ export const LANGUAGES = [
 
 export type Language = (typeof LANGUAGES)[number];
 
+export type CoverImage = 'none' | 'default' | 'custom';
+
 export interface SongExportSettings {
 	songsDirectory: string;
+	codeBlockName: string;
 	outputFile: string;
 	bookTitle: string;
 	bookAuthor: string;
 	bookLanguage: Language;
 	titleSplitSequence: string;
+	coverImage: CoverImage;
+	coverImagePath: string;
 	titleFont: FontName;
 	contentFont: FontName;
 	sectionTitleScale: number;
@@ -52,15 +56,18 @@ export interface SongExportSettings {
 
 export const DEFAULT_SETTINGS: SongExportSettings = {
 	songsDirectory: '',
+	codeBlockName: 'chords',
 	outputFile: '~/Documents/my-songs.epub',
 	bookTitle: 'My Songbook',
 	bookAuthor: 'Obsidian',
 	bookLanguage: 'en',
 	titleSplitSequence: ' - ',
+	coverImage: 'default',
+	coverImagePath: '',
 	titleFont: 'Playfair Display',
 	contentFont: 'Lora',
 	sectionTitleScale: 2,
-	songTitleScale: 3,
+	songTitleScale: 2,
 };
 
 export class SongExportSettingTab extends PluginSettingTab {
@@ -79,6 +86,11 @@ export class SongExportSettingTab extends PluginSettingTab {
 			'Songs directory',
 			'Vault folder searched recursively for song notes. Empty means the vault root.',
 			'songsDirectory',
+		);
+		this.addText(
+			'Code block name',
+			'Notes with code blocks of this type are songs; only their contents are exported.',
+			'codeBlockName',
 		);
 		this.addText(
 			'Output file',
@@ -117,6 +129,28 @@ export class SongExportSettingTab extends PluginSettingTab {
 					}),
 			);
 
+		new Setting(containerEl)
+			.setName('Cover image')
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption('none', 'None')
+					.addOption('default', 'Default')
+					.addOption('custom', 'Custom image')
+					.setValue(this.plugin.settings.coverImage)
+					.onChange(async (value) => {
+						this.plugin.settings.coverImage = value as CoverImage;
+						await this.plugin.saveSettings();
+						this.display();
+					}),
+			);
+		if (this.plugin.settings.coverImage === 'custom') {
+			this.addText(
+				'Cover image path',
+				'JPEG, PNG or WebP. A vault path, or an absolute path starting with / or ~.',
+				'coverImagePath',
+			);
+		}
+
 		this.addFont(
 			'Title font',
 			'Used for song and section titles.',
@@ -141,7 +175,9 @@ export class SongExportSettingTab extends PluginSettingTab {
 		desc: string,
 		key:
 			| 'songsDirectory'
+			| 'codeBlockName'
 			| 'outputFile'
+			| 'coverImagePath'
 			| 'bookTitle'
 			| 'bookAuthor',
 	): void {

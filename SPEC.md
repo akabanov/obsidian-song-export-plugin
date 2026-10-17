@@ -24,15 +24,18 @@ Both run the same export:
 | Setting | Default | Notes |
 |---|---|---|
 | Songs directory | empty (vault root) | Vault-relative path, searched recursively. |
+| Code block name | `chords` | Info string of the code blocks that hold song content. Empty means the default. |
 | Output file | `~/Documents/my-songs.epub` | Absolute path; a leading `~` expands to the user's home directory. Missing parent directories are created. |
 | Book title | `My Songbook` | EPUB `dc:title`. |
 | Book author | `Obsidian` | EPUB `dc:creator`; omitted when empty. |
-| Book language | `EN` | Dropdown. `EN` comes first, then the others alphabetically: `CS`, `DE`, `ES`, `FR`, `IT`, `JA`, `KO`, `NL`, `PL`, `PT`, `RU`, `SV`, `UK`, `ZH`. Written to EPUB `dc:language` and `xml:lang` as the lowercase code (`en`). |
+| Book language | `EN` | Dropdown, sorted alphabetically: `CS`, `DE`, `EN`, `ES`, `FR`, `IT`, `JA`, `KO`, `NL`, `PL`, `PT`, `RU`, `SV`, `UK`, `ZH`. Written to EPUB `dc:language` and `xml:lang` as the lowercase code (`en`). |
 | Title split sequence | ` - ` (space, hyphen, space) | Where the song title is split into two lines. Empty means never split. |
+| Cover image | Default | Dropdown: *None*, *Default* (the bundled cover) or *Custom image*. |
+| Cover image path | empty | Shown only for *Custom image*. JPEG, PNG or WebP. A path starting with `/` or `~` is a filesystem path; anything else is relative to the vault root. |
 | Title font | `Playfair Display` | Used for the song title and the section title. |
 | Content font | `Lora` | Used for song content. |
 | Section title size | `2` | Multiplier of the content font size. |
-| Song title size | `3` | Multiplier of the **section title** size (so 6× content by default). |
+| Song title size | `2` | Multiplier of the **section title** size (so 4× content by default). Chaining sizes like this is the usual modular type scale. |
 
 Font settings are dropdowns over the curated list in [Typography](#typography).
 
@@ -44,7 +47,15 @@ The book TOC (`nav.xhtml` and `toc.ncx`) lists only song titles — no section e
 
 Songs are ordered alphabetically by note title (case-insensitive, locale-aware).
 
-The EPUB has a stable `dc:identifier` (a UUID generated once and stored in plugin data) so readers recognise a re-export as the same book, and a `dcterms:modified` timestamp updated on every export. There is no cover image.
+The EPUB has a stable `dc:identifier` (a UUID generated once and stored in plugin data) so readers recognise a re-export as the same book, and a `dcterms:modified` timestamp updated on every export.
+
+### Cover
+
+- **Default:** the bundled cover `assets/default-cover.jpg` (a black-and-white guitarist illustration titled "my songbook", 896×1200). It is inlined into `main.js` at build time, because Obsidian installs only `main.js`, `manifest.json` and `styles.css`. The title on it is part of the image, so it doesn't change with the *Book title* setting.
+- **Custom image:** the image at *Cover image path*. If the file is missing or isn't JPEG, PNG or WebP, the export fails with an error notice.
+- **None:** the book has no cover.
+
+When there is a cover, it is declared in the OPF manifest with `properties="cover-image"`, plus `<meta name="cover">` for EPUB 2 readers. It is also shown as the first page in the spine, before the first song, scaled to fit the page without cropping. It isn't listed in the TOC.
 
 ### Page layout
 
@@ -56,7 +67,7 @@ Each title page and each section's content is a separate XHTML file in the spine
 
 ## Discovering the songs
 
-A **song note** is a Markdown file under the songs directory (any depth) that contains at least one fenced code block with the info string `chords` (fenced with ```` ``` ```` or `~~~`).
+A **song note** is a Markdown file under the songs directory (any depth) that contains at least one fenced code block whose info string is the *Code block name* setting (`chords` by default), fenced with ```` ``` ```` or `~~~`. Below, "`chords` block" means such a block.
 
 Code blocks of other types (`metronome`, `alphatex`, …) and all text outside `chords` blocks are ignored.
 
@@ -74,7 +85,7 @@ Only the content of the `chords` code blocks is exported. A song note may have m
 
 Songs are divided into sections by section headers in square brackets: `[Verse]`, `[Verse 2]`, `[Intro]`, etc.
 
-A line is a section header when, after trimming, it matches `^\[[^\[\]]+\]$`: it starts with `[`, ends with the matching `]`, and has non-empty text between them with no further brackets. Anything after the closing bracket, including space followed by text, makes it a regular line. For example, `[1.] 1 1 5 5` and `[Guitar Tabs](https://…)` are regular lines, and `[]` is a regular line.
+A line is a section header when it matches `^\s*\[[^\[\]]+\]\s*$`: it starts with `[`, ends with the matching `]`, and has non-empty text between them with no further brackets. Whitespace before the `[` or after the `]` is ignored. Any non-whitespace character after the closing bracket makes it a regular line. For example, `[1.] 1 1 5 5` and `[Guitar Tabs](https://…)` are regular lines, and `[]` is a regular line.
 
 The section name is the text between the brackets, trimmed, without the brackets.
 
@@ -85,16 +96,17 @@ Text before the first section header is discarded.
 These steps run in order on each line of a section's body:
 
 1. Trim the line.
-2. Drop `--` lines: lines that consist only of two or more `-` characters.
-3. Drop tab lines: lines that start with a string name followed by `|`, matching `^[A-Ga-g][#b]?\|` (e.g. `e|-----`, `B|--3--`, `Eb|---`).
-4. Collapse each run of whitespace characters into a single space.
+2. Strip line-end hints: remove one or more trailing `%` + letter tokens (e.g. `%t`, `%c`) together with the whitespace before them, matching `(^|\s+)(%[A-Za-z]\s*)+$`. These are rendering hints for the Obsidian plugin that displays `chords` blocks. For example, `|b7 6m| |5 4| %t` becomes `|b7 6m| |5 4|`.
+3. Drop `--` lines: lines that consist only of two or more `-` characters.
+4. Drop tab lines: lines that start with a string name followed by `|`, matching `^[A-Ga-g][#b]?\|` (e.g. `e|-----`, `B|--3--`, `Eb|---`).
+5. Collapse each run of whitespace characters into a single space.
 
 After that:
 
-5. Collapse each run of consecutive empty lines into one empty line.
-6. Remove empty lines at the start and end of the section.
+6. Collapse each run of consecutive empty lines into one empty line.
+7. Remove empty lines at the start and end of the section.
 
-Trimming and collapsing whitespace, together with proportional fonts, means chords no longer line up over the syllables they belong to. This is a deliberate trade-off for readability.
+Trimming and collapsing whitespace (steps 1 and 5), together with proportional fonts, means chords no longer line up over the syllables they belong to. This is a deliberate trade-off for readability.
 
 If a section is empty after pre-processing, it is not included.
 
@@ -140,4 +152,4 @@ All sizes are in `em`, relative to the reader's base font size, so the reader's 
 
 - Content: `1em`, regular.
 - Section title: bold, content size × section title multiplier (default `2em`).
-- Song title: bold, section title size × song title multiplier (default `6em`).
+- Song title: bold, section title size × song title multiplier (default `4em`).
