@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { deflateRawSync, inflateRawSync } from 'node:zlib';
+import { DEFAULT_COVER } from '../cover';
 import { Book, buildEpub } from './book';
 import { escapeXml } from './xml';
 import { createZip, crc32 } from './zip';
@@ -58,7 +59,7 @@ const BOOK: Book = {
 	language: 'en',
 	modified: new Date('2026-10-17T12:34:56.789Z'),
 	cover: { bytes: new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]), mediaType: 'image/jpeg' },
-	layout: 'cards',
+	layout: { songTitleOwnPage: true, sectionTitleOwnPage: true },
 	songs: [
 		{
 			title: 'Armstrong - What a Wonderful World',
@@ -72,17 +73,6 @@ const BOOK: Book = {
 			title: 'Tom & Jerry',
 			titleLines: ['Tom & Jerry'],
 			sections: [{ name: 'Intro', lines: ['A'] }],
-		},
-	],
-	titleFont: 'Playfair Display',
-	contentFont: 'Lora',
-	fonts: [
-		{ family: 'Lora', weight: 400, format: 'ttf', bytes: new Uint8Array(500).buffer },
-		{
-			family: 'Playfair Display',
-			weight: 700,
-			format: 'ttf',
-			bytes: new Uint8Array(500).buffer,
 		},
 	],
 	sectionTitleScale: 2,
@@ -193,7 +183,8 @@ describe('buildEpub', () => {
 
 	it('renders the song title on two lines', () => {
 		const page = textOf(entries, 'OEBPS/text/song-001.xhtml');
-		assert.match(page, /<span class="title-line">Armstrong<\/span>\n<span class="title-line">What a Wonderful World<\/span>/);
+		assert.match(page, /<h1 class="song-title">Armstrong<br\/>\nWhat a Wonderful World<\/h1>/);
+		assert.match(page, /<body class="page title-page" epub:type="chapter">/);
 		assert.match(page, /<svg /);
 		assert.match(page, /xml:lang="en"/);
 	});
@@ -206,22 +197,47 @@ describe('buildEpub', () => {
 		const content = textOf(entries, 'OEBPS/text/song-001-01-content.xhtml');
 		assert.match(
 			content,
-			/<p class="line">C Em<\/p>\n<p class="line">I see trees of green<\/p>\n<p class="line gap">&#160;<\/p>\n<p class="line">F &lt;Em&gt;<\/p>/,
+			/<div class="line">C Em<\/div>\n<div class="line">I see trees of green<\/div>\n<div class="line gap">&#160;<\/div>\n<div class="line">F &lt;Em&gt;<\/div>/,
 		);
 	});
 
-	it('embeds the fonts and sizes titles from the multipliers', () => {
-		assert.match(opf, /<item id="font-lora-400" href="fonts\/lora-400.ttf" media-type="font\/ttf"\/>/);
-		assert.ok(entries.some((e) => e.path === 'OEBPS/fonts/playfair-display-700.ttf'));
+	it('sizes titles from the multipliers in a stylesheet Adobe RMSDK can parse', () => {
 		const css = textOf(entries, 'OEBPS/styles/book.css');
-		assert.match(css, /font-family: "Lora";\n\tfont-style: normal;\n\tfont-weight: 400;\n\tsrc: url\("..\/fonts\/lora-400.ttf"\) format\("truetype"\);/);
 		assert.match(css, /\.song-title \{\n\tfont-size: 3em;/);
 		assert.match(css, /\.section-title \{\n\tfont-size: 2em;/);
+		assert.doesNotMatch(css, /calc\(|vh\b|flex|font-family|@font-face/);
+		assert.match(textOf(entries, 'OEBPS/styles/centering.css'), /min-height: calc\(100vh - 2em\)/);
+		assert.match(opf, /<item id="css-centering" href="styles\/centering.css" media-type="text\/css"\/>/);
+		const page = textOf(entries, 'OEBPS/text/song-001-01.xhtml');
+		assert.match(page, /href="..\/styles\/book.css"\/>\n<link rel="stylesheet" type="text\/css" href="..\/styles\/centering.css"\/>/);
+		assert.ok(!entries.some((e) => e.path.includes('fonts/')));
+	});
+
+	it('falls back to an <img> cover when the image size is unknown', () => {
+		const cover = textOf(entries, 'OEBPS/text/cover.xhtml');
+		assert.match(cover, /<img src="..\/images\/cover.jpg" alt="My Songbook"/);
+		assert.match(opf, /<item id="cover" href="text\/cover.xhtml" media-type="application\/xhtml\+xml"\/>/);
 	});
 });
 
-describe('buildEpub in book layout', () => {
-	const entries = readZip(buildEpub({ ...BOOK, layout: 'book' }, deflate));
+describe('buildEpub with the default cover', () => {
+	const entries = readZip(buildEpub({ ...BOOK, cover: DEFAULT_COVER }, deflate));
+
+	it('scales the cover to the page with an SVG wrapper', () => {
+		const cover = textOf(entries, 'OEBPS/text/cover.xhtml');
+		assert.match(cover, /<svg [^>]*width="100%" height="100%" viewBox="0 0 896 1200" preserveAspectRatio="xMidYMid meet"><image width="896" height="1200" xlink:href="..\/images\/cover.jpg"\/><\/svg>/);
+		assert.match(cover, /@page \{ margin: 0; padding: 0; \}/);
+		const opf = textOf(entries, 'OEBPS/content.opf');
+		assert.match(opf, /<item id="cover" href="text\/cover.xhtml" media-type="application\/xhtml\+xml" properties="svg"\/>/);
+	});
+});
+
+const spineOf = (book: Book) =>
+	[...textOf(readZip(buildEpub(book, deflate)), 'OEBPS/content.opf').matchAll(/<itemref idref="([^"]+)"/g)].map((m) => m[1]);
+
+describe('buildEpub with no title pages', () => {
+	const layout = { songTitleOwnPage: false, sectionTitleOwnPage: false };
+	const entries = readZip(buildEpub({ ...BOOK, layout }, deflate));
 	const opf = textOf(entries, 'OEBPS/content.opf');
 
 	it('puts each song on one page', () => {
@@ -234,13 +250,39 @@ describe('buildEpub in book layout', () => {
 	it('runs the titles and content together', () => {
 		const page = textOf(entries, 'OEBPS/text/song-001.xhtml');
 		assert.match(page, /<body class="song" epub:type="chapter">/);
-		assert.match(page, /<span class="title-line">What a Wonderful World<\/span>\n<\/h1>\n<\/div>\n<div class="section">\n<h2 class="section-title">Verse 1<\/h2>\n<div class="content">\n<p class="line">C Em<\/p>/);
-		assert.match(page, /<h2 class="section-title">Chorus<\/h2>\n<div class="content">\n<p class="line">G<\/p>/);
+		assert.match(page, /What a Wonderful World<\/h1>\n<\/div>\n<div class="section">\n<h2 class="section-title">Verse 1<\/h2>\n<div class="content">\n<div class="line">C Em<\/div>/);
+		assert.match(page, /<h2 class="section-title">Chorus<\/h2>\n<div class="content">\n<div class="line">G<\/div>/);
 	});
 
 	it('keeps the table of contents pointing at the songs', () => {
 		const nav = textOf(entries, 'OEBPS/nav.xhtml');
 		assert.match(nav, /<a href="text\/song-001.xhtml">/);
 		assert.match(nav, /<a href="text\/song-002.xhtml">/);
+	});
+});
+
+describe('buildEpub with one kind of title page', () => {
+	it('puts the song title alone, then runs the sections together', () => {
+		const book = { ...BOOK, layout: { songTitleOwnPage: true, sectionTitleOwnPage: false } };
+		assert.deepEqual(spineOf(book), ['cover', 'song-001', 'song-001-content', 'song-002', 'song-002-content']);
+		const entries = readZip(buildEpub(book, deflate));
+		assert.match(textOf(entries, 'OEBPS/text/song-001.xhtml'), /<body class="page title-page" epub:type="chapter">/);
+		const content = textOf(entries, 'OEBPS/text/song-001-content.xhtml');
+		assert.match(content, /<body class="song">\n<div class="section">\n<h2 class="section-title">Verse 1/);
+	});
+
+	it('shares the first section title page with the song title', () => {
+		const book = { ...BOOK, layout: { songTitleOwnPage: false, sectionTitleOwnPage: true } };
+		assert.deepEqual(spineOf(book), [
+			'cover',
+			'song-001',
+			'song-001-01-content',
+			'song-001-02',
+			'song-001-02-content',
+			'song-002',
+			'song-002-01-content',
+		]);
+		const page = textOf(readZip(buildEpub(book, deflate)), 'OEBPS/text/song-001.xhtml');
+		assert.match(page, /What a Wonderful World<\/h1>\n<\/div>\n<h2 class="section-title">Verse 1<\/h2>\n<\/body>/);
 	});
 });

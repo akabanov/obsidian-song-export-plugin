@@ -24,10 +24,10 @@ That saved a wretch like me
 Click the songbook icon in the left ribbon, or run **Export songs to EPUB**, and you get a book where:
 
 - 📖 **Every song is a chapter**, opened by a clean title (`Artist` over `Title`).
-- 🔖 **Pick a layout**: *flash cards* give every song title, section title (`[Verse 1]`, `[Chorus]` …) and section its own page, for drilling one part at a time. *Book* starts each song on a new page and runs its sections together, for playing straight through.
+- 🔖 **Pick a layout**: give song titles and section titles (`[Verse 1]`, `[Chorus]` …) their own pages, flash-card style, for drilling one part at a time; or run a song's sections together, for playing straight through. Every song starts on a new page.
 - 🖼️ **It has a cover**: a bundled black-and-white illustration, your own image, or none.
 - 🧹 **The clutter is gone**: tab lines, `--` separators, `%t`-style rendering hints, stray whitespace and empty sections are dropped. Everything outside `chords` blocks stays in your vault.
-- ✍️ **It looks like a book**: you pick from 10 curated Google Fonts, they are embedded in the EPUB, and every size scales with your reader's font setting.
+- ✍️ **It reads well on e-ink**: titles are sized by multipliers you choose, the text uses your reader's font, and every size scales with its font-size setting. The book works with Kobo's stricter EPUB renderer too.
 - 🗂️ **The table of contents stays short**: songs only, in alphabetical order.
 
 ## Install with BRAT
@@ -47,17 +47,22 @@ BRAT checks for new releases and updates the plugin for you. Songbook Maker runs
 |---|---|
 | Songs directory | vault root |
 | Code block name | `chords` |
-| Output file | `~/Documents/my-songs.epub` (asks before overwriting) |
+| Output file | `~/Documents/my-songbook.epub` (asks before overwriting) |
 | Book title / author / language | My Songbook / Obsidian / EN |
 | Title split sequence | ` - ` |
 | Cover image | bundled default (or none, or your own image) |
-| Page layout | flash cards (or book) |
-| Title / content font | Playfair Display / Lora |
+| Song title / section title on its own page | on / on |
 | Section / song title size | 2× content / 2× section |
 
-## Network use
+## Privacy
 
-The only network requests Songbook Maker makes are to Google Fonts (`fonts.googleapis.com` and `fonts.gstatic.com`), to download a font the first time you select or export with it. Font files are cached in the plugin's folder, so later exports work offline. No vault content or personal data is sent.
+Songbook Maker makes no network requests. The export reads your song notes and writes one file to the path you set.
+
+## Reading on a Kobo
+
+Kobo opens sideloaded `.epub` files with its older Adobe renderer, which doesn't support vertical centering. Title pages start about a third of the way down there instead of being centered.
+
+For a sharp cover, use an image at least as large as your screen (for example 1072×1448 on a Clara, 1264×1680 on a Libra). Smaller images are scaled up to fill the page.
 
 ## Development
 
@@ -69,7 +74,7 @@ npm test        # unit tests (Node's built-in test runner)
 npm run lint
 ```
 
-To try a local build, symlink or copy `main.js`, `manifest.json` and `styles.css` into `<vault>/.obsidian/plugins/songbook-maker/`.
+To try a local build, symlink or copy `main.js` and `manifest.json` into `<vault>/.obsidian/plugins/songbook-maker/`.
 
 ## Releasing
 
@@ -103,7 +108,7 @@ The `version` input takes an explicit version or an `npm version` keyword:
 1. Installs dependencies, runs the unit tests and the linter. A failure stops the release before anything is changed.
 2. Bumps the version in `package.json`, `manifest.json` and `versions.json`, commits it to `main` as `Release <version>` and tags it with the bare version (no leading `v`).
 3. Builds `main.js` and attests its build provenance.
-4. Publishes a GitHub release for the tag, with `main.js`, `manifest.json` and `styles.css` attached and notes generated from the commits. Versions with a pre-release suffix (`-beta.N`) are marked as pre-releases.
+4. Publishes a GitHub release for the tag, with `main.js` and `manifest.json` attached and notes generated from the commits. Versions with a pre-release suffix (`-beta.N`) are marked as pre-releases.
 
 BRAT picks up the new version on its next update check, or right away with **BRAT: Check for updates to all beta plugins**.
 

@@ -1,8 +1,6 @@
 import { App, normalizePath, Notice } from 'obsidian';
 import { DEFAULT_COVER, detectImageType } from '../cover';
 import { BookCover, buildEpub } from '../epub/book';
-import { FontCache } from '../fonts/cache';
-import { CONTENT_WEIGHT, FontFile, TITLE_WEIGHT } from '../fonts/catalog';
 import { DEFAULT_SETTINGS, SongbookMakerSettings } from '../settings';
 import { confirm } from '../ui/confirm-modal';
 import { errorMessage } from '../utils/errors';
@@ -17,7 +15,6 @@ import { NodeApis, nodeApis } from './node';
 export async function exportSongs(
 	app: App,
 	settings: SongbookMakerSettings,
-	fonts: FontCache,
 ): Promise<void> {
 	let node: NodeApis;
 	let target: string;
@@ -65,11 +62,11 @@ export async function exportSongs(
 				language: settings.bookLanguage,
 				modified: new Date(),
 				cover: await loadCover(app, node, settings),
-				layout: settings.pageLayout,
+				layout: {
+					songTitleOwnPage: settings.songTitleOwnPage,
+					sectionTitleOwnPage: settings.sectionTitleOwnPage,
+				},
 				songs,
-				titleFont: settings.titleFont,
-				contentFont: settings.contentFont,
-				fonts: await loadFonts(fonts, settings),
 				sectionTitleScale: settings.sectionTitleScale,
 				songTitleScale: settings.songTitleScale,
 			},
@@ -97,17 +94,6 @@ function outputPath(node: NodeApis, setting: string): string {
 		throw new Error(`The output file must be an absolute path: ${setting}`);
 	}
 	return node.path.normalize(path);
-}
-
-/** The regular content face and the bold title face. */
-async function loadFonts(
-	cache: FontCache,
-	settings: SongbookMakerSettings,
-): Promise<FontFile[]> {
-	return Promise.all([
-		cache.get(settings.contentFont, CONTENT_WEIGHT),
-		cache.get(settings.titleFont, TITLE_WEIGHT),
-	]);
 }
 
 async function loadCover(

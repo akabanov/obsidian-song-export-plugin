@@ -95,9 +95,7 @@ jobs:
             - name: Attest build provenance
               uses: actions/attest@v4
               with:
-                  subject-path: |
-                      main.js
-                      styles.css
+                  subject-path: main.js
 
             - name: Create release
               env:
@@ -111,4 +109,4 @@ jobs:
                     --title "$TAG" \
                     --generate-notes \
                     "${flags[@]}" \
-                    main.js manifest.json styles.css
+                    main.js manifest.json

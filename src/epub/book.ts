@@ -1,5 +1,5 @@
-import { FontFile, fontFileStem } from '../fonts/catalog';
 import { Section } from '../song/sections';
+import { imageSize } from './image-size';
 import {
 	CONTAINER_XML,
 	ManifestItem,
@@ -10,12 +10,13 @@ import {
 } from './package';
 import {
 	coverPage,
+	runningPage,
 	sectionContentPage,
-	sectionTitlePage,
-	songPage,
-	songTitlePage,
+	sectionHeading,
+	songHeading,
+	titlePage,
 } from './pages';
-import { stylesheet } from './stylesheet';
+import { bookStylesheet, CENTERING_STYLESHEET } from './stylesheet';
 import { createZip, Deflate, ZipEntry } from './zip';
 
 export interface BookSong {
@@ -24,11 +25,11 @@ export interface BookSong {
 	sections: Section[];
 }
 
-/**
- * `cards`: flash-card-like, every title and every section's content on its own
- * page. `book`: each song starts on a new page, titles and content run on.
- */
-export type PageLayout = 'cards' | 'book';
+/** Which titles get a page to themselves. Every song starts on a new page. */
+export interface PageLayout {
+	songTitleOwnPage: boolean;
+	sectionTitleOwnPage: boolean;
+}
 
 export type CoverMediaType = 'image/jpeg' | 'image/png' | 'image/webp';
 
@@ -46,10 +47,6 @@ export interface Book {
 	cover: BookCover | null;
 	layout: PageLayout;
 	songs: BookSong[];
-	titleFont: string;
-	contentFont: string;
-	/** Every font file the stylesheet uses. */
-	fonts: FontFile[];
 	sectionTitleScale: number;
 	songTitleScale: number;
 }
@@ -82,17 +79,7 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 	manifest.push({ id: 'nav', href: 'nav.xhtml', mediaType: XHTML, properties: 'nav' });
 	manifest.push({ id: 'ncx', href: 'toc.ncx', mediaType: 'application/x-dtbncx+xml' });
 	manifest.push({ id: 'css', href: 'styles/book.css', mediaType: 'text/css' });
-
-	for (const font of book.fonts) {
-		const stem = fontFileStem(font.family, font.weight);
-		const name = `${stem}.${font.format}`;
-		files.push({ path: `OEBPS/fonts/${name}`, data: new Uint8Array(font.bytes) });
-		manifest.push({
-			id: `font-${stem}`,
-			href: `fonts/${name}`,
-			mediaType: font.format === 'ttf' ? 'font/ttf' : 'font/woff2',
-		});
-	}
+	manifest.push({ id: 'css-centering', href: 'styles/centering.css', mediaType: 'text/css' });
 
 	let coverImageId: string | null = null;
 	if (book.cover) {
@@ -105,55 +92,70 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 			mediaType: book.cover.mediaType,
 			properties: 'cover-image',
 		});
-		addPage('cover', 'text/cover.xhtml', coverPage(lang, book.title, image));
+		const size = imageSize(book.cover.bytes, book.cover.mediaType);
+		addPage(
+			'cover',
+			'text/cover.xhtml',
+			coverPage(lang, book.title, image, size),
+			size ? 'svg' : undefined,
+		);
 	}
 
+	const { songTitleOwnPage, sectionTitleOwnPage } = book.layout;
 	book.songs.forEach((song, i) => {
 		const songId = `song-${pad(i + 1, 3)}`;
 		const songPath = `text/${songId}.xhtml`;
 		toc.push({ title: song.title, href: songPath });
-		if (book.layout === 'book') {
-			addPage(
-				songId,
-				songPath,
-				songPage(lang, song.title, song.titleLines, song.sections),
-				'svg',
-			);
+		const heading = songHeading(song.titleLines);
+		// Pages with the song heading hold the inline SVG icon.
+		const addSongPage = (xhtml: string) => addPage(songId, songPath, xhtml, 'svg');
+
+		if (!sectionTitleOwnPage) {
+			if (songTitleOwnPage) {
+				addSongPage(titlePage(lang, song.title, heading, true));
+				addPage(
+					`${songId}-content`,
+					`text/${songId}-content.xhtml`,
+					runningPage(lang, song.title, song.sections, null),
+				);
+			} else {
+				addSongPage(runningPage(lang, song.title, song.sections, heading));
+			}
 			return;
 		}
 
-		addPage(songId, songPath, songTitlePage(lang, song.title, song.titleLines), 'svg');
-
+		if (songTitleOwnPage) addSongPage(titlePage(lang, song.title, heading, true));
 		song.sections.forEach((section, j) => {
 			const sectionId = `${songId}-${pad(j + 1, 2)}`;
-			addPage(
-				sectionId,
-				`text/${sectionId}.xhtml`,
-				sectionTitlePage(lang, song.title, section.name),
-			);
+			const title = `${song.title}: ${section.name}`;
+			if (j === 0 && !songTitleOwnPage) {
+				// The song title shares the first section title's page.
+				addSongPage(
+					titlePage(lang, song.title, `${heading}\n${sectionHeading(section.name)}`, true),
+				);
+			} else {
+				addPage(
+					sectionId,
+					`text/${sectionId}.xhtml`,
+					titlePage(lang, title, sectionHeading(section.name), false),
+				);
+			}
 			addPage(
 				`${sectionId}-content`,
 				`text/${sectionId}-content.xhtml`,
-				sectionContentPage(lang, song.title, section.name, section.lines),
+				sectionContentPage(lang, title, section.lines),
 			);
 		});
 	});
 
 	addText(
 		'styles/book.css',
-		stylesheet({
-			fonts: book.fonts.map((font) => ({
-				family: font.family,
-				weight: font.weight,
-				href: `../fonts/${fontFileStem(font.family, font.weight)}.${font.format}`,
-				format: font.format === 'ttf' ? 'truetype' : 'woff2',
-			})),
-			titleFont: book.titleFont,
-			contentFont: book.contentFont,
+		bookStylesheet({
 			sectionTitleScale: book.sectionTitleScale,
 			songTitleScale: book.songTitleScale,
 		}),
 	);
+	addText('styles/centering.css', CENTERING_STYLESHEET);
 	addText('nav.xhtml', navDocument(lang, book.title, toc));
 	addText('toc.ncx', ncxDocument(book.id, book.title, toc));
 	addText(

@@ -1,8 +1,5 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
-import { PageLayout } from './epub/book';
-import { FontName, FONTS } from './fonts/catalog';
 import type SongbookMakerPlugin from './main';
-import { FontPreview } from './ui/font-preview';
 
 export const LANGUAGES = [
 	'cs',
@@ -36,9 +33,8 @@ export interface SongbookMakerSettings {
 	titleSplitSequence: string;
 	coverImage: CoverImage;
 	coverImagePath: string;
-	pageLayout: PageLayout;
-	titleFont: FontName;
-	contentFont: FontName;
+	songTitleOwnPage: boolean;
+	sectionTitleOwnPage: boolean;
 	sectionTitleScale: number;
 	songTitleScale: number;
 	/** Stable EPUB identifier, generated on first load. Not shown in the UI. */
@@ -48,24 +44,41 @@ export interface SongbookMakerSettings {
 export const DEFAULT_SETTINGS: SongbookMakerSettings = {
 	songsDirectory: '',
 	codeBlockName: 'chords',
-	outputFile: '~/Documents/my-songs.epub',
+	outputFile: '~/Documents/my-songbook.epub',
 	bookTitle: 'My Songbook',
 	bookAuthor: 'Obsidian',
 	bookLanguage: 'en',
 	titleSplitSequence: ' - ',
 	coverImage: 'default',
 	coverImagePath: '',
-	pageLayout: 'cards',
-	titleFont: 'Playfair Display',
-	contentFont: 'Lora',
+	songTitleOwnPage: true,
+	sectionTitleOwnPage: true,
 	sectionTitleScale: 2,
 	songTitleScale: 2,
 	bookId: '',
 };
 
+/** Settings of 0.1.0-beta.1 that no longer exist, dropped from saved data on load. */
+const REMOVED_SETTINGS = ['pageLayout', 'titleFont', 'contentFont'];
+
+/**
+ * Fills in defaults for missing settings and carries the old *Page layout*
+ * choice over to the two title page toggles.
+ */
+export function migrateSettings(
+	data: Record<string, unknown> | null,
+): SongbookMakerSettings {
+	const saved = { ...data };
+	if (saved.pageLayout === 'book' && !('songTitleOwnPage' in saved)) {
+		saved.songTitleOwnPage = false;
+		saved.sectionTitleOwnPage = false;
+	}
+	for (const key of REMOVED_SETTINGS) delete saved[key];
+	return { ...DEFAULT_SETTINGS, ...(saved as Partial<SongbookMakerSettings>) };
+}
+
 export class SongbookMakerSettingTab extends PluginSettingTab {
 	plugin: SongbookMakerPlugin;
-	private preview: FontPreview | null = null;
 
 	constructor(app: App, plugin: SongbookMakerPlugin) {
 		super(app, plugin);
@@ -119,7 +132,6 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						// Not trimmed: surrounding spaces are part of the sequence.
 						this.plugin.settings.titleSplitSequence = value;
-						void this.preview?.render();
 						await this.plugin.saveSettings();
 					}),
 			);
@@ -146,32 +158,20 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 			);
 		}
 
-		new Setting(containerEl)
-			.setName('Page layout')
-			.setDesc(
-				'Flash cards put every song title, section title and section on its own page. Book starts each song on a new page and runs its titles and content together.',
-			)
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption('cards', 'Flash cards')
-					.addOption('book', 'Book')
-					.setValue(this.plugin.settings.pageLayout)
-					.onChange(async (value) => {
-						this.plugin.settings.pageLayout = value as PageLayout;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		this.addFont(
-			'Title font',
-			'Used for song and section titles.',
-			'titleFont',
+		this.addToggle(
+			'Song title on its own page',
+			'Otherwise the song content starts right below the song title.',
+			'songTitleOwnPage',
 		);
-		this.addFont('Content font', 'Used for song content.', 'contentFont');
+		this.addToggle(
+			'Section title on its own page',
+			'Each section title gets a page, and the section content starts on the next one. Otherwise sections run together.',
+			'sectionTitleOwnPage',
+		);
 
 		this.addScale(
 			'Section title size',
-			'Multiplier of the content font size.',
+			'Multiplier of the content text size.',
 			'sectionTitleScale',
 		);
 		this.addScale(
@@ -179,17 +179,6 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 			'Multiplier of the section title size.',
 			'songTitleScale',
 		);
-
-		this.preview = new FontPreview(
-			containerEl,
-			this.plugin.previewFonts,
-			() => this.plugin.settings,
-		);
-		void this.preview.render();
-	}
-
-	hide(): void {
-		this.preview = null;
 	}
 
 	private addText(
@@ -217,24 +206,20 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 			);
 	}
 
-	private addFont(
+	private addToggle(
 		name: string,
 		desc: string,
-		key: 'titleFont' | 'contentFont',
+		key: 'songTitleOwnPage' | 'sectionTitleOwnPage',
 	): void {
 		new Setting(this.containerEl)
 			.setName(name)
 			.setDesc(desc)
-			.addDropdown((dropdown) => {
-				for (const font of FONTS) dropdown.addOption(font, font);
-				dropdown
-					.setValue(this.plugin.settings[key])
-					.onChange(async (value) => {
-						this.plugin.settings[key] = value as FontName;
-						void this.preview?.render();
-						await this.plugin.saveSettings();
-					});
-			});
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings[key]).onChange(async (value) => {
+					this.plugin.settings[key] = value;
+					await this.plugin.saveSettings();
+				}),
+			);
 	}
 
 	private addScale(
@@ -252,7 +237,6 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 					.setDynamicTooltip()
 					.onChange(async (value) => {
 						this.plugin.settings[key] = value;
-						void this.preview?.render();
 						await this.plugin.saveSettings();
 					}),
 			);
