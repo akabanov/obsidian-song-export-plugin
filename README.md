@@ -1,4 +1,4 @@
-# 🎸 Song Export for Obsidian
+# 🎸 Songbook Maker for Obsidian
 
 Turn the chord sheets in your vault into a songbook you can learn from anywhere: one EPUB with all your songs, ready to read on your e-reader, tablet or phone between practice sessions.
 
@@ -36,10 +36,10 @@ The plugin isn't in the Community plugins directory yet, so install it with [BRA
 
 1. In Obsidian, open *Settings → Community plugins → Browse*, then install and enable **BRAT**.
 2. Run **BRAT: Add a beta plugin for testing** from the command palette.
-3. Enter `akabanov/obsidian-song-export-plugin` and choose the latest version. Early releases are betas (`0.1.0-beta.N`).
-4. Enable **Song Export** under *Settings → Community plugins*.
+3. Enter `akabanov/obsidian-songbook-maker-plugin` and choose the latest version. Early releases are betas (`0.1.0-beta.N`).
+4. Enable **Songbook Maker** under *Settings → Community plugins*.
 
-BRAT checks for new releases and updates the plugin for you. Song Export runs on desktop only.
+BRAT checks for new releases and updates the plugin for you. Songbook Maker runs on desktop only.
 
 ## Settings
 
@@ -57,7 +57,7 @@ BRAT checks for new releases and updates the plugin for you. Song Export runs on
 
 ## Network use
 
-The only network requests Song Export makes are to Google Fonts (`fonts.googleapis.com` and `fonts.gstatic.com`), to download a font the first time you select or export with it. Font files are cached in the plugin's folder, so later exports work offline. No vault content or personal data is sent.
+The only network requests Songbook Maker makes are to Google Fonts (`fonts.googleapis.com` and `fonts.gstatic.com`), to download a font the first time you select or export with it. Font files are cached in the plugin's folder, so later exports work offline. No vault content or personal data is sent.
 
 ## Development
 
@@ -69,7 +69,7 @@ npm test        # unit tests (Node's built-in test runner)
 npm run lint
 ```
 
-To try a local build, symlink or copy `main.js`, `manifest.json` and `styles.css` into `<vault>/.obsidian/plugins/song-export/`.
+To try a local build, symlink or copy `main.js`, `manifest.json` and `styles.css` into `<vault>/.obsidian/plugins/songbook-maker/`.
 
 ## Releasing
 

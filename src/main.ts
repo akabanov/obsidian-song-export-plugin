@@ -4,11 +4,11 @@ import { FontCache } from './fonts/cache';
 import { PreviewFonts } from './fonts/preview-faces';
 import {
 	DEFAULT_SETTINGS,
-	SongExportSettings,
-	SongExportSettingTab,
+	SongbookMakerSettings,
+	SongbookMakerSettingTab,
 } from './settings';
 
-const RIBBON_ICON = 'song-export-songbook';
+const RIBBON_ICON = 'songbook-maker-songbook';
 
 // An open songbook: lyric lines on the left page, a music note on the right.
 // Drawn on Lucide's 24-unit grid and scaled to Obsidian's 100-unit icon box.
@@ -22,8 +22,8 @@ const RIBBON_ICON_SVG = `<g transform="scale(4.1667)" fill="none" stroke="curren
 	<circle cx="16.5" cy="13" r="1.5"/>
 </g>`;
 
-export default class SongExportPlugin extends Plugin {
-	settings!: SongExportSettings;
+export default class SongbookMakerPlugin extends Plugin {
+	settings!: SongbookMakerSettings;
 	fontCache!: FontCache;
 	previewFonts!: PreviewFonts;
 	private exporting = false;
@@ -49,7 +49,7 @@ export default class SongExportPlugin extends Plugin {
 			},
 		});
 
-		this.addSettingTab(new SongExportSettingTab(this.app, this));
+		this.addSettingTab(new SongbookMakerSettingTab(this.app, this));
 	}
 
 	onunload() {
@@ -70,7 +70,7 @@ export default class SongExportPlugin extends Plugin {
 		this.settings = Object.assign(
 			{},
 			DEFAULT_SETTINGS,
-			(await this.loadData()) as Partial<SongExportSettings>,
+			(await this.loadData()) as Partial<SongbookMakerSettings>,
 		);
 		if (!this.settings.bookId) {
 			this.settings.bookId = crypto.randomUUID();

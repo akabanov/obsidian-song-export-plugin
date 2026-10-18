@@ -1,6 +1,6 @@
 import { CONTENT_WEIGHT, FontName, FontWeight, TITLE_WEIGHT } from '../fonts/catalog';
 import { PreviewFonts } from '../fonts/preview-faces';
-import { SongExportSettings } from '../settings';
+import { SongbookMakerSettings } from '../settings';
 import { preprocessSection } from '../song/sections';
 import { splitTitle } from '../song/song';
 
@@ -25,18 +25,18 @@ export class FontPreview {
 	constructor(
 		parent: HTMLElement,
 		private readonly fonts: PreviewFonts,
-		private readonly settings: () => SongExportSettings,
+		private readonly settings: () => SongbookMakerSettings,
 	) {
-		this.el = parent.createDiv({ cls: 'song-export-preview' });
-		this.statusEl = this.el.createDiv({ cls: 'song-export-preview-status' });
+		this.el = parent.createDiv({ cls: 'songbook-maker-preview' });
+		this.statusEl = this.el.createDiv({ cls: 'songbook-maker-preview-status' });
 		this.setStatus('');
-		const page = this.el.createDiv({ cls: 'song-export-preview-page' });
-		this.songTitleEl = page.createDiv({ cls: 'song-export-preview-song-title' });
+		const page = this.el.createDiv({ cls: 'songbook-maker-preview-page' });
+		this.songTitleEl = page.createDiv({ cls: 'songbook-maker-preview-song-title' });
 		page.createDiv({
-			cls: 'song-export-preview-section-title',
+			cls: 'songbook-maker-preview-section-title',
 			text: SAMPLE_SECTION,
 		});
-		const content = page.createDiv({ cls: 'song-export-preview-content' });
+		const content = page.createDiv({ cls: 'songbook-maker-preview-content' });
 		for (const line of preprocessSection(SAMPLE_LINES)) {
 			content.createDiv({ text: line });
 		}
@@ -58,8 +58,8 @@ export class FontPreview {
 			this.songTitleEl.createDiv({ text: line });
 		}
 		this.el.setCssProps({
-			'--song-export-section-scale': String(sectionTitleScale),
-			'--song-export-song-scale': String(songTitleScale),
+			'--songbook-maker-section-scale': String(sectionTitleScale),
+			'--songbook-maker-song-scale': String(songTitleScale),
 		});
 
 		const doc = this.el.doc;
@@ -80,8 +80,8 @@ export class FontPreview {
 		if (id !== this.renderId) return;
 
 		this.el.setCssProps({
-			'--song-export-title-font': cssFontFamily(title.name),
-			'--song-export-content-font': cssFontFamily(content.name),
+			'--songbook-maker-title-font': cssFontFamily(title.name),
+			'--songbook-maker-content-font': cssFontFamily(content.name),
 		});
 		const failed = [title, content]
 			.filter((font) => font.name === null)

@@ -5,7 +5,7 @@ import { FontFormat, FontName, FontWeight } from './catalog';
  * split into unicode-range subsets; any other agent gets one complete TTF,
  * which is what an EPUB needs.
  */
-export const GOOGLE_FONTS_USER_AGENT = 'Obsidian Song Export';
+export const GOOGLE_FONTS_USER_AGENT = 'Obsidian Songbook Maker';
 
 export function googleFontsCssUrl(family: FontName, weight: FontWeight): string {
 	const name = encodeURIComponent(family).replace(/%20/g, '+');

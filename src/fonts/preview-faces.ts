@@ -14,7 +14,7 @@ export class PreviewFonts {
 
 	/** The CSS family name the face is registered under. */
 	familyName(family: FontName, weight: FontWeight): string {
-		return `Song Export ${fontFileStem(family, weight)}`;
+		return `Songbook Maker ${fontFileStem(family, weight)}`;
 	}
 
 	/** Loads the face (downloading the font if needed) into `doc`. */

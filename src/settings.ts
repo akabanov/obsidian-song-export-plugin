@@ -1,7 +1,7 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import { PageLayout } from './epub/book';
 import { FontName, FONTS } from './fonts/catalog';
-import type SongExportPlugin from './main';
+import type SongbookMakerPlugin from './main';
 import { FontPreview } from './ui/font-preview';
 
 export const LANGUAGES = [
@@ -26,7 +26,7 @@ export type Language = (typeof LANGUAGES)[number];
 
 export type CoverImage = 'none' | 'default' | 'custom';
 
-export interface SongExportSettings {
+export interface SongbookMakerSettings {
 	songsDirectory: string;
 	codeBlockName: string;
 	outputFile: string;
@@ -45,7 +45,7 @@ export interface SongExportSettings {
 	bookId: string;
 }
 
-export const DEFAULT_SETTINGS: SongExportSettings = {
+export const DEFAULT_SETTINGS: SongbookMakerSettings = {
 	songsDirectory: '',
 	codeBlockName: 'chords',
 	outputFile: '~/Documents/my-songs.epub',
@@ -63,11 +63,11 @@ export const DEFAULT_SETTINGS: SongExportSettings = {
 	bookId: '',
 };
 
-export class SongExportSettingTab extends PluginSettingTab {
-	plugin: SongExportPlugin;
+export class SongbookMakerSettingTab extends PluginSettingTab {
+	plugin: SongbookMakerPlugin;
 	private preview: FontPreview | null = null;
 
-	constructor(app: App, plugin: SongExportPlugin) {
+	constructor(app: App, plugin: SongbookMakerPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}

@@ -1,4 +1,4 @@
-# Song Export — Specification
+# Songbook Maker — Specification
 
 An Obsidian plugin that exports song notes from the vault into a single EPUB songbook for learning and practice. Every song starts on a new page. In the default *flash cards* layout, the song and each of its sections get their own title pages, and each section's content gets its own page; the *book* layout runs a song's titles and content together (see [Page layout](#page-layout)).
 
@@ -10,7 +10,7 @@ An Obsidian plugin that exports song notes from the vault into a single EPUB son
 ## Triggering the export
 
 - A ribbon icon in the left-hand sidebar: a custom icon of an open book with lyric lines on the left page and a music note on the right.
-- Command palette: **Song Export: Export songs to EPUB**.
+- Command palette: **Songbook Maker: Export songs to EPUB**.
 
 Both run the same export:
 

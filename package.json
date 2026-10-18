@@ -1,5 +1,5 @@
 {
-	"name": "obsidian-song-export-plugin",
+	"name": "obsidian-songbook-maker-plugin",
 	"version": "0.1.0-beta.1",
 	"description": "Obsidian plugin that exports chord sheets into an EPUB songbook",
 	"main": "main.js",

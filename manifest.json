@@ -1,6 +1,6 @@
 {
-	"id": "song-export",
-	"name": "Song Export",
+	"id": "songbook-maker",
+	"name": "Songbook Maker",
 	"version": "0.1.0-beta.1",
 	"minAppVersion": "1.0.0",
 	"description": "Export chord sheets from your vault into an EPUB songbook.",

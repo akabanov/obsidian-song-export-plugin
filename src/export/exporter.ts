@@ -3,7 +3,7 @@ import { DEFAULT_COVER, detectImageType } from '../cover';
 import { BookCover, buildEpub } from '../epub/book';
 import { FontCache } from '../fonts/cache';
 import { CONTENT_WEIGHT, FontFile, TITLE_WEIGHT } from '../fonts/catalog';
-import { DEFAULT_SETTINGS, SongExportSettings } from '../settings';
+import { DEFAULT_SETTINGS, SongbookMakerSettings } from '../settings';
 import { confirm } from '../ui/confirm-modal';
 import { errorMessage } from '../utils/errors';
 import { expandHome, isFilesystemPath } from '../utils/paths';
@@ -16,7 +16,7 @@ import { NodeApis, nodeApis } from './node';
  */
 export async function exportSongs(
 	app: App,
-	settings: SongExportSettings,
+	settings: SongbookMakerSettings,
 	fonts: FontCache,
 ): Promise<void> {
 	let node: NodeApis;
@@ -25,7 +25,7 @@ export async function exportSongs(
 		node = nodeApis();
 		target = outputPath(node, settings.outputFile || DEFAULT_SETTINGS.outputFile);
 	} catch (error) {
-		new Notice(`Song export failed: ${errorMessage(error)}`);
+		new Notice(`Songbook export failed: ${errorMessage(error)}`);
 		return;
 	}
 
@@ -48,7 +48,7 @@ export async function exportSongs(
 			settings.titleSplitSequence,
 		);
 		for (const song of skipped) {
-			console.warn(`Song Export: skipped ${song.path}: ${song.reason}`);
+			console.warn(`Songbook Maker: skipped ${song.path}: ${song.reason}`);
 		}
 		if (songs.length === 0) {
 			throw new Error(
@@ -86,8 +86,8 @@ export async function exportSongs(
 		);
 	} catch (error) {
 		progress.hide();
-		console.error('Song Export:', error);
-		new Notice(`Song export failed: ${errorMessage(error)}`, 10000);
+		console.error('Songbook Maker:', error);
+		new Notice(`Songbook export failed: ${errorMessage(error)}`, 10000);
 	}
 }
 
@@ -102,7 +102,7 @@ function outputPath(node: NodeApis, setting: string): string {
 /** The regular content face and the bold title face. */
 async function loadFonts(
 	cache: FontCache,
-	settings: SongExportSettings,
+	settings: SongbookMakerSettings,
 ): Promise<FontFile[]> {
 	return Promise.all([
 		cache.get(settings.contentFont, CONTENT_WEIGHT),
@@ -113,7 +113,7 @@ async function loadFonts(
 async function loadCover(
 	app: App,
 	node: NodeApis,
-	settings: SongExportSettings,
+	settings: SongbookMakerSettings,
 ): Promise<BookCover | null> {
 	if (settings.coverImage === 'none') return null;
 	if (settings.coverImage === 'default') return DEFAULT_COVER;
