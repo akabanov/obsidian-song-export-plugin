@@ -16,7 +16,7 @@ import {
 	songHeading,
 	titlePage,
 } from './pages';
-import { bookStylesheet, CENTERING_STYLESHEET } from './stylesheet';
+import { bookStylesheet, modernStylesheet, songIconWidth } from './stylesheet';
 import { createZip, Deflate, ZipEntry } from './zip';
 
 export interface BookSong {
@@ -79,7 +79,7 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 	manifest.push({ id: 'nav', href: 'nav.xhtml', mediaType: XHTML, properties: 'nav' });
 	manifest.push({ id: 'ncx', href: 'toc.ncx', mediaType: 'application/x-dtbncx+xml' });
 	manifest.push({ id: 'css', href: 'styles/book.css', mediaType: 'text/css' });
-	manifest.push({ id: 'css-centering', href: 'styles/centering.css', mediaType: 'text/css' });
+	manifest.push({ id: 'css-modern', href: 'styles/modern.css', mediaType: 'text/css' });
 
 	let coverImageId: string | null = null;
 	if (book.cover) {
@@ -102,12 +102,17 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 	}
 
 	const { songTitleOwnPage, sectionTitleOwnPage } = book.layout;
+	const scales = {
+		sectionTitleScale: book.sectionTitleScale,
+		songTitleScale: book.songTitleScale,
+	};
+	const iconWidth = songIconWidth(scales);
 	book.songs.forEach((song, i) => {
 		const songId = `song-${pad(i + 1, 3)}`;
 		const songPath = `text/${songId}.xhtml`;
 		toc.push({ title: song.title, href: songPath });
-		const heading = songHeading(song.titleLines, false);
-		const ownPageHeading = songHeading(song.titleLines, true);
+		const heading = songHeading(song.titleLines, false, iconWidth);
+		const ownPageHeading = songHeading(song.titleLines, true, iconWidth);
 		// Pages with the song heading hold the inline SVG icon.
 		const addSongPage = (xhtml: string) => addPage(songId, songPath, xhtml, 'svg');
 
@@ -151,12 +156,9 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 
 	addText(
 		'styles/book.css',
-		bookStylesheet({
-			sectionTitleScale: book.sectionTitleScale,
-			songTitleScale: book.songTitleScale,
-		}),
+		bookStylesheet(scales),
 	);
-	addText('styles/centering.css', CENTERING_STYLESHEET);
+	addText('styles/modern.css', modernStylesheet(scales));
 	addText('nav.xhtml', navDocument(lang, book.title, toc));
 	addText('toc.ncx', ncxDocument(book.id, book.title, toc));
 	addText(

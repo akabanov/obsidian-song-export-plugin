@@ -3,12 +3,14 @@ import { ImageSize } from './image-size';
 import { escapeXml } from './xml';
 
 /** Stylesheet paths relative to the XHTML pages in `text/`. */
-const STYLESHEETS = ['../styles/book.css', '../styles/centering.css'];
+const STYLESHEETS = ['../styles/book.css', '../styles/modern.css'];
 
-// A music note (Lucide's "music" glyph) marking song titles. The size is in
-// the SVG's own attributes, in em: Kobo's Adobe renderer ignores CSS width and
-// height on inline SVG and falls back to these.
-const SONG_ICON = `<svg xmlns="http://www.w3.org/2000/svg" class="song-icon" viewBox="0 0 24 24" width="3em" height="3em" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
+// A fleuron marking song titles: the light swash ornament (U+1F658) from Noto
+// Sans Symbols 2, © Google, SIL Open Font License 1.1.
+const SONG_ICON_PATH = `M530 605Q492 605 451 582Q410 559 369.5 522.5Q329 486 289 444Q249 402 213 364Q180 378 146 387.5Q112 397 74 397Q38 397 19 379.5Q0 362 0 336Q0 304 20 275.5Q40 247 70.5 229Q101 211 132 211Q156 211 188.5 238Q221 265 259 305Q268 301 278 295Q301 272 332.5 235.5Q364 199 401 158Q438 117 478 81Q518 45 558.5 22.5Q599 0 636 0Q680 0 701.5 20Q723 40 723 69Q723 90 712.5 109.5Q702 129 689 141.5Q676 154 670 154Q664 154 664 150Q664 148 668 143Q672 138 672 125Q672 102 653.5 81.5Q635 61 597 61Q560 61 520 85Q480 109 443 144.5Q406 180 376.5 214Q347 248 330 269Q388 240 457 215.5Q526 191 618 191Q704 191 762 219.5Q820 248 849.5 291.5Q879 335 879 380Q879 414 867.5 441Q856 468 840.5 487Q825 506 811.5 516Q798 526 793 526Q787 526 787 521Q787 517 794 509Q801 501 807.5 485.5Q814 470 814 445Q814 393 784 350.5Q754 308 697.5 282.5Q641 257 563 257Q472 257 406 280.5Q340 304 283 331Q317 368 354 406.5Q391 445 428.5 478Q466 511 503.5 531Q541 551 576 551Q604 551 613.5 534Q623 517 623 501Q623 478 609.5 458.5Q596 439 575 427Q554 415 531 415Q522 415 517.5 416.5Q513 418 509 418Q507 418 507 416Q507 411 517.5 398.5Q528 386 535 382Q544 376 556.5 370.5Q569 365 585 365Q614 365 642 387.5Q670 410 670 455Q670 496 648 530.5Q626 565 593.5 585Q561 605 530 605ZM43 297Q43 317 61.5 331.5Q80 346 111 346Q130 346 148.5 343Q167 340 185 335Q153 304 126.5 284Q100 264 80 264Q65 264 54 275Q43 286 43 297Z`;
+
+/** Height over width of the song icon. */
+export const SONG_ICON_ASPECT = 605 / 879;
 
 const STYLESHEET_LINKS = STYLESHEETS.map(
 	(href) => `<link rel="stylesheet" type="text/css" href="${href}"/>`,
@@ -37,12 +39,23 @@ ${body}
 }
 
 /**
- * The song title with its icon. Title lines are split with `<br/>`, which
- * doesn't depend on the stylesheet; `spaced` puts an empty line between them.
+ * The song icon, `width` em wide. Kobo's Adobe renderer ignores CSS width and
+ * height on inline SVG and uses these attributes; modern.css overrides them
+ * for other readers.
  */
-export function songHeading(titleLines: string[], spaced: boolean): string {
+function songIcon(width: number): string {
+	const em = (value: number) => `${Math.round(value * 1000) / 1000}em`;
+	return `<svg xmlns="http://www.w3.org/2000/svg" class="song-icon" viewBox="0 0 879 605" width="${em(width)}" height="${em(width * SONG_ICON_ASPECT)}" fill="#000000" aria-hidden="true"><path d="${SONG_ICON_PATH}"/></svg>`;
+}
+
+/**
+ * The song title with its icon, `iconWidth` em wide. Title lines are split
+ * with `<br/>`, which doesn't depend on the stylesheet; `spaced` puts an empty
+ * line between them.
+ */
+export function songHeading(titleLines: string[], spaced: boolean, iconWidth: number): string {
 	const lines = titleLines.map(escapeXml).join(spaced ? '<br/>\n<br/>\n' : '<br/>\n');
-	return `<div class="song-heading">\n<div class="icon">${SONG_ICON}</div>\n<h1 class="song-title">${lines}</h1>\n</div>`;
+	return `<div class="song-heading">\n<div class="icon">${songIcon(iconWidth)}</div>\n<h1 class="song-title">${lines}</h1>\n</div>`;
 }
 
 export function sectionHeading(name: string): string {

@@ -184,7 +184,8 @@ describe('buildEpub', () => {
 	it('renders the song title on two lines', () => {
 		const page = textOf(entries, 'OEBPS/text/song-001.xhtml');
 		assert.match(page, /<h1 class="song-title">Armstrong<br\/>\n<br\/>\nWhat a Wonderful World<\/h1>/);
-		assert.match(page, /<svg [^>]*width="3em" height="3em"/);
+		assert.match(page, /<svg [^>]*viewBox="0 0 879 605" width="7.68em" height="5.286em"/);
+		assert.match(page, /<path d="M[\d .MQZ]+"\/><\/svg>/);
 		assert.match(page, /<body class="page title-page" epub:type="chapter">/);
 		assert.match(page, /<svg /);
 		assert.match(page, /xml:lang="en"/);
@@ -207,10 +208,13 @@ describe('buildEpub', () => {
 		assert.match(css, /\.song-title \{\n\tfont-size: 3em;/);
 		assert.match(css, /\.section-title \{\n\tfont-size: 2em;/);
 		assert.doesNotMatch(css, /calc\(|vh\b|flex|font-family|@font-face/);
-		assert.match(textOf(entries, 'OEBPS/styles/centering.css'), /min-height: calc\(100vh - 2em\)/);
-		assert.match(opf, /<item id="css-centering" href="styles\/centering.css" media-type="text\/css"\/>/);
+		assert.match(css, /\.icon \{\n\tmargin: 0 0 3.6em;/);
+		const modern = textOf(entries, 'OEBPS/styles/modern.css');
+		assert.match(modern, /min-height: calc\(100vh - 2em\)/);
+		assert.match(modern, /\.song-icon \{\n\twidth: 5.76em;\n\theight: 3.965em;/);
+		assert.match(opf, /<item id="css-modern" href="styles\/modern.css" media-type="text\/css"\/>/);
 		const page = textOf(entries, 'OEBPS/text/song-001-01.xhtml');
-		assert.match(page, /href="..\/styles\/book.css"\/>\n<link rel="stylesheet" type="text\/css" href="..\/styles\/centering.css"\/>/);
+		assert.match(page, /href="..\/styles\/book.css"\/>\n<link rel="stylesheet" type="text\/css" href="..\/styles\/modern.css"\/>/);
 		assert.ok(!entries.some((e) => e.path.includes('fonts/')));
 	});
 

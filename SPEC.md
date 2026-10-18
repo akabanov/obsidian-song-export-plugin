@@ -38,8 +38,8 @@ Starting an export while one is running does nothing.
 | Cover image path | empty | Shown only for *Custom image*. JPEG, PNG or WebP, detected from the file contents. A path starting with `/` or `~` is a filesystem path; anything else is relative to the vault root. |
 | Song title on its own page | On | Toggle. See [Page layout](#page-layout). |
 | Section title on its own page | On | Toggle. See [Page layout](#page-layout). |
-| Section title size | `1.25` | Multiplier of the content text size. |
-| Song title size | `1.25` | Multiplier of the **section title** size (so about 1.56× content by default). Chaining sizes like this is the usual modular type scale. |
+| Section title size | `1.25` | Multiplier of the content text size. Slider from 1 to 3 in steps of 0.25. |
+| Song title size | `1.25` | Multiplier of the **section title** size (so about 1.56× content by default). Chaining sizes like this is the usual modular type scale. Slider from 1 to 3 in steps of 0.25. Saved values above 3 (allowed up to 0.1.0-beta.3) are lowered to 3 on load. |
 
 ## Output
 
@@ -93,7 +93,12 @@ The **song title** is the note's file name without the `.md` extension.
 
 The song title page shows only the song title, split into two lines at the first occurrence of the title split sequence. With the default ` - `, `Armstrong - What a Wonderful World` becomes `Armstrong` on line one and `What a Wonderful World` on line two. If the title doesn't contain the sequence, the sequence is empty, or splitting would leave one of the lines empty (e.g. ` - Intro`), the title is shown on one line. Both parts are trimmed. Both lines use the same size. The lines are separated by `<br/>`, so the split doesn't depend on the stylesheet. When the song title is on a page of its own, an empty line (a second `<br/>`) separates the two lines. The TOC entry uses the full, unsplit title.
 
-On a page of its own, the text is centered both vertically and horizontally. A static black-and-white icon (an inline SVG music note bundled with the plugin, `3em` square) sits above the title, so a song title page can be told apart from a section title page at a glance.
+On a page of its own, the text is centered both vertically and horizontally. A black fleuron sits above the title, so a song title page can be told apart from a section title page at a glance: the light swash ornament (U+1F658) from Noto Sans Symbols 2 (SIL Open Font License), as an inline SVG path bundled with the plugin.
+
+The fleuron scales with the song title: its width is a multiple of the song title size, so changing either title size multiplier resizes it too. Its size and the gap below it are tuned per renderer, because Kobo's Adobe renderer draws them differently:
+
+- Kobo ignores CSS sizes on inline SVG, so the SVG's own `width` and `height` attributes apply there: 2.56 × the song title size wide (`4em` with the default multipliers). Other readers get 1.92 × the song title size (`3em` by default) from `modern.css`.
+- The gap below the fleuron is one title line (song title size × line-height 1.2) in `book.css`, the same as the empty line between the two title lines. `modern.css` brings it back to `1em`, where it already looks as wide as that empty line.
 
 Only the content of the `chords` code blocks is exported. A song note may have more than one `chords` block; their contents are joined, in order of appearance, before sections are parsed. So a section may continue from one block into the next, and text before the first section header in the first block is discarded.
 
@@ -152,7 +157,7 @@ The book sets no font family, so the text uses the reader's font setting. Song a
 The styles are split into two stylesheets, linked from every page in this order:
 
 - `styles/book.css` uses only CSS 2.1 (plus the `hyphens` properties), with no `calc()`, `vh`, flexbox, custom properties or `@font-face`. Kobo renders sideloaded EPUBs with Adobe RMSDK, which drops a whole stylesheet when it meets one value it can't parse, so this file must parse there.
-- `styles/centering.css` holds the [vertical centering](#vertical-centering). Its `calc()` is deliberate: RMSDK skips the whole file, rather than applying part of the flex layout, and keeps the fallback placement from `book.css`.
+- `styles/modern.css` holds the [vertical centering](#vertical-centering) and overrides the values in `book.css` that are tuned for RMSDK (the title page's top padding, the fleuron's size and gap). Its `calc()` is deliberate: RMSDK skips the whole file, rather than applying part of it, and keeps the values from `book.css`.
 
 All sizes are in `em`, relative to the reader's base font size, so the reader's font-size control still scales everything:
 

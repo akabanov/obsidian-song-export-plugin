@@ -76,7 +76,18 @@ export function migrateSettings(
 		saved.sectionTitleOwnPage = false;
 	}
 	for (const key of REMOVED_SETTINGS) delete saved[key];
-	return { ...DEFAULT_SETTINGS, ...(saved as Partial<SongbookMakerSettings>) };
+	const settings = { ...DEFAULT_SETTINGS, ...(saved as Partial<SongbookMakerSettings>) };
+	settings.sectionTitleScale = clampScale(settings.sectionTitleScale);
+	settings.songTitleScale = clampScale(settings.songTitleScale);
+	return settings;
+}
+
+/** Title size multipliers range from 1 to 3; older versions allowed up to 5. */
+export const MIN_SCALE = 1;
+export const MAX_SCALE = 3;
+
+function clampScale(value: number): number {
+	return Math.min(MAX_SCALE, Math.max(MIN_SCALE, value));
 }
 
 export class SongbookMakerSettingTab extends PluginSettingTab {
@@ -239,7 +250,7 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 			.setDesc(desc)
 			.addSlider((slider) =>
 				slider
-					.setLimits(1, 5, 0.25)
+					.setLimits(MIN_SCALE, MAX_SCALE, 0.25)
 					.setValue(this.plugin.settings[key])
 					.setDynamicTooltip()
 					.onChange(async (value) => {
