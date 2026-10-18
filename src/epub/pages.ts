@@ -5,8 +5,10 @@ import { escapeXml } from './xml';
 /** Stylesheet paths relative to the XHTML pages in `text/`. */
 const STYLESHEETS = ['../styles/book.css', '../styles/centering.css'];
 
-// A music note (Lucide's "music" glyph) marking song titles.
-const SONG_ICON = `<svg xmlns="http://www.w3.org/2000/svg" class="song-icon" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
+// A music note (Lucide's "music" glyph) marking song titles. The size is in
+// the SVG's own attributes, in em: Kobo's Adobe renderer ignores CSS width and
+// height on inline SVG and falls back to these.
+const SONG_ICON = `<svg xmlns="http://www.w3.org/2000/svg" class="song-icon" viewBox="0 0 24 24" width="3em" height="3em" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
 
 const STYLESHEET_LINKS = STYLESHEETS.map(
 	(href) => `<link rel="stylesheet" type="text/css" href="${href}"/>`,
@@ -36,10 +38,10 @@ ${body}
 
 /**
  * The song title with its icon. Title lines are split with `<br/>`, which
- * doesn't depend on the stylesheet.
+ * doesn't depend on the stylesheet; `spaced` puts an empty line between them.
  */
-export function songHeading(titleLines: string[]): string {
-	const lines = titleLines.map(escapeXml).join('<br/>\n');
+export function songHeading(titleLines: string[], spaced: boolean): string {
+	const lines = titleLines.map(escapeXml).join(spaced ? '<br/>\n<br/>\n' : '<br/>\n');
 	return `<div class="song-heading">\n<div class="icon">${SONG_ICON}</div>\n<h1 class="song-title">${lines}</h1>\n</div>`;
 }
 

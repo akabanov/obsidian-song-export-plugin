@@ -27,6 +27,7 @@ export interface SongbookMakerSettings {
 	songsDirectory: string;
 	codeBlockName: string;
 	outputFile: string;
+	showInFolder: boolean;
 	bookTitle: string;
 	bookAuthor: string;
 	bookLanguage: Language;
@@ -45,6 +46,7 @@ export const DEFAULT_SETTINGS: SongbookMakerSettings = {
 	songsDirectory: '',
 	codeBlockName: 'chords',
 	outputFile: '~/Documents/my-songbook.epub',
+	showInFolder: false,
 	bookTitle: 'My Songbook',
 	bookAuthor: 'Obsidian',
 	bookLanguage: 'en',
@@ -53,8 +55,8 @@ export const DEFAULT_SETTINGS: SongbookMakerSettings = {
 	coverImagePath: '',
 	songTitleOwnPage: true,
 	sectionTitleOwnPage: true,
-	sectionTitleScale: 2,
-	songTitleScale: 2,
+	sectionTitleScale: 1.25,
+	songTitleScale: 1.25,
 	bookId: '',
 };
 
@@ -103,6 +105,11 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 			'Output file',
 			'Absolute path of the EPUB file. A leading ~ expands to your home directory.',
 			'outputFile',
+		);
+		this.addToggle(
+			'Show in folder after export',
+			"Opens your system's file manager with the EPUB file selected.",
+			'showInFolder',
 		);
 		this.addText('Book title', 'Shown by e-book readers.', 'bookTitle');
 		this.addText('Book author', 'Leave empty to omit.', 'bookAuthor');
@@ -209,7 +216,7 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 	private addToggle(
 		name: string,
 		desc: string,
-		key: 'songTitleOwnPage' | 'sectionTitleOwnPage',
+		key: 'showInFolder' | 'songTitleOwnPage' | 'sectionTitleOwnPage',
 	): void {
 		new Setting(this.containerEl)
 			.setName(name)

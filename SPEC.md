@@ -29,6 +29,7 @@ Starting an export while one is running does nothing.
 | Songs directory | empty (vault root) | Vault-relative path, searched recursively. |
 | Code block name | `chords` | Info string of the code blocks that hold song content. Empty means the default. |
 | Output file | `~/Documents/my-songbook.epub` | Absolute path; a leading `~` expands to the user's home directory. Missing parent directories are created. A relative path fails the export with an error notice. |
+| Show in folder after export | Off | Toggle. After a successful export, opens the system file manager (Finder, Explorer, …) with the EPUB selected, through Electron's `shell.showItemInFolder`. If that fails, a warning goes to the developer console; the export still counts as successful. |
 | Book title | `My Songbook` | EPUB `dc:title`. |
 | Book author | `Obsidian` | EPUB `dc:creator`; omitted when empty. |
 | Book language | `EN` | Dropdown, sorted alphabetically: `CS`, `DE`, `EN`, `ES`, `FR`, `IT`, `JA`, `KO`, `NL`, `PL`, `PT`, `RU`, `SV`, `UK`, `ZH`. Written to EPUB `dc:language` and `xml:lang` as the lowercase code (`en`). |
@@ -37,8 +38,8 @@ Starting an export while one is running does nothing.
 | Cover image path | empty | Shown only for *Custom image*. JPEG, PNG or WebP, detected from the file contents. A path starting with `/` or `~` is a filesystem path; anything else is relative to the vault root. |
 | Song title on its own page | On | Toggle. See [Page layout](#page-layout). |
 | Section title on its own page | On | Toggle. See [Page layout](#page-layout). |
-| Section title size | `2` | Multiplier of the content text size. |
-| Song title size | `2` | Multiplier of the **section title** size (so 4× content by default). Chaining sizes like this is the usual modular type scale. |
+| Section title size | `1.25` | Multiplier of the content text size. |
+| Song title size | `1.25` | Multiplier of the **section title** size (so about 1.56× content by default). Chaining sizes like this is the usual modular type scale. |
 
 ## Output
 
@@ -90,9 +91,9 @@ Code blocks of other types (`metronome`, `alphatex`, …) and all text outside `
 
 The **song title** is the note's file name without the `.md` extension.
 
-The song title page shows only the song title, split into two lines at the first occurrence of the title split sequence. With the default ` - `, `Armstrong - What a Wonderful World` becomes `Armstrong` on line one and `What a Wonderful World` on line two. If the title doesn't contain the sequence, the sequence is empty, or splitting would leave one of the lines empty (e.g. ` - Intro`), the title is shown on one line. Both parts are trimmed. Both lines use the same size. The lines are separated by `<br/>`, so the split doesn't depend on the stylesheet. The TOC entry uses the full, unsplit title.
+The song title page shows only the song title, split into two lines at the first occurrence of the title split sequence. With the default ` - `, `Armstrong - What a Wonderful World` becomes `Armstrong` on line one and `What a Wonderful World` on line two. If the title doesn't contain the sequence, the sequence is empty, or splitting would leave one of the lines empty (e.g. ` - Intro`), the title is shown on one line. Both parts are trimmed. Both lines use the same size. The lines are separated by `<br/>`, so the split doesn't depend on the stylesheet. When the song title is on a page of its own, an empty line (a second `<br/>`) separates the two lines. The TOC entry uses the full, unsplit title.
 
-On a page of its own, the text is centered both vertically and horizontally. A static black-and-white icon (an inline SVG music note bundled with the plugin) sits above the title, so a song title page can be told apart from a section title page at a glance.
+On a page of its own, the text is centered both vertically and horizontally. A static black-and-white icon (an inline SVG music note bundled with the plugin, `3em` square) sits above the title, so a song title page can be told apart from a section title page at a glance.
 
 Only the content of the `chords` code blocks is exported. A song note may have more than one `chords` block; their contents are joined, in order of appearance, before sections are parsed. So a section may continue from one block into the next, and text before the first section header in the first block is discarded.
 
@@ -156,5 +157,5 @@ The styles are split into two stylesheets, linked from every page in this order:
 All sizes are in `em`, relative to the reader's base font size, so the reader's font-size control still scales everything:
 
 - Content: `1em`, regular.
-- Section title: bold, content size × section title multiplier (default `2em`).
-- Song title: bold, section title size × song title multiplier (default `4em`).
+- Section title: bold, content size × section title multiplier (default `1.25em`).
+- Song title: bold, section title size × song title multiplier (default `1.5625em`).

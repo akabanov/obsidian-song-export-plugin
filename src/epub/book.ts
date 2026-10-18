@@ -106,13 +106,14 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 		const songId = `song-${pad(i + 1, 3)}`;
 		const songPath = `text/${songId}.xhtml`;
 		toc.push({ title: song.title, href: songPath });
-		const heading = songHeading(song.titleLines);
+		const heading = songHeading(song.titleLines, false);
+		const ownPageHeading = songHeading(song.titleLines, true);
 		// Pages with the song heading hold the inline SVG icon.
 		const addSongPage = (xhtml: string) => addPage(songId, songPath, xhtml, 'svg');
 
 		if (!sectionTitleOwnPage) {
 			if (songTitleOwnPage) {
-				addSongPage(titlePage(lang, song.title, heading, true));
+				addSongPage(titlePage(lang, song.title, ownPageHeading, true));
 				addPage(
 					`${songId}-content`,
 					`text/${songId}-content.xhtml`,
@@ -124,7 +125,7 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 			return;
 		}
 
-		if (songTitleOwnPage) addSongPage(titlePage(lang, song.title, heading, true));
+		if (songTitleOwnPage) addSongPage(titlePage(lang, song.title, ownPageHeading, true));
 		song.sections.forEach((section, j) => {
 			const sectionId = `${songId}-${pad(j + 1, 2)}`;
 			const title = `${song.title}: ${section.name}`;

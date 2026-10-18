@@ -48,11 +48,12 @@ BRAT checks for new releases and updates the plugin for you. Songbook Maker runs
 | Songs directory | vault root |
 | Code block name | `chords` |
 | Output file | `~/Documents/my-songbook.epub` (asks before overwriting) |
+| Show in folder after export | off |
 | Book title / author / language | My Songbook / Obsidian / EN |
 | Title split sequence | ` - ` |
 | Cover image | bundled default (or none, or your own image) |
 | Song title / section title on its own page | on / on |
-| Section / song title size | 2× content / 2× section |
+| Section / song title size | 1.25× content / 1.25× section |
 
 ## Privacy
 

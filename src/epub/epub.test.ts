@@ -183,7 +183,8 @@ describe('buildEpub', () => {
 
 	it('renders the song title on two lines', () => {
 		const page = textOf(entries, 'OEBPS/text/song-001.xhtml');
-		assert.match(page, /<h1 class="song-title">Armstrong<br\/>\nWhat a Wonderful World<\/h1>/);
+		assert.match(page, /<h1 class="song-title">Armstrong<br\/>\n<br\/>\nWhat a Wonderful World<\/h1>/);
+		assert.match(page, /<svg [^>]*width="3em" height="3em"/);
 		assert.match(page, /<body class="page title-page" epub:type="chapter">/);
 		assert.match(page, /<svg /);
 		assert.match(page, /xml:lang="en"/);
@@ -283,6 +284,6 @@ describe('buildEpub with one kind of title page', () => {
 			'song-002-01-content',
 		]);
 		const page = textOf(readZip(buildEpub(book, deflate)), 'OEBPS/text/song-001.xhtml');
-		assert.match(page, /What a Wonderful World<\/h1>\n<\/div>\n<h2 class="section-title">Verse 1<\/h2>\n<\/body>/);
+		assert.match(page, /Armstrong<br\/>\nWhat a Wonderful World<\/h1>\n<\/div>\n<h2 class="section-title">Verse 1<\/h2>\n<\/body>/);
 	});
 });

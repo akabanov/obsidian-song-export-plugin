@@ -81,6 +81,7 @@ export async function exportSongs(
 					? `. Skipped ${skipped.length}; see the developer console.`
 					: '.'),
 		);
+		if (settings.showInFolder) showInFolder(node, target);
 	} catch (error) {
 		progress.hide();
 		console.error('Songbook Maker:', error);
@@ -143,6 +144,15 @@ async function writeAtomically(
 	} catch (error) {
 		await fs.promises.rm(temp, { force: true }).catch(() => undefined);
 		throw error;
+	}
+}
+
+/** Best effort: the book is already written, so a failure only warns. */
+function showInFolder(node: NodeApis, target: string): void {
+	try {
+		node.showItemInFolder(target);
+	} catch (error) {
+		console.warn('Songbook Maker: could not show the book in its folder:', error);
 	}
 }
 

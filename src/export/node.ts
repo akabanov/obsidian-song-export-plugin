@@ -5,6 +5,12 @@ export interface NodeApis {
 	path: typeof import('path');
 	os: typeof import('os');
 	zlib: typeof import('zlib');
+	/** Opens the system file manager with the file selected. */
+	showItemInFolder: (path: string) => void;
+}
+
+interface ElectronShell {
+	shell: { showItemInFolder: (path: string) => void };
 }
 
 /**
@@ -22,6 +28,8 @@ export function nodeApis(): NodeApis {
 		path: require('path') as typeof import('path'),
 		os: require('os') as typeof import('os'),
 		zlib: require('zlib') as typeof import('zlib'),
+		showItemInFolder: (path) =>
+			(require('electron') as ElectronShell).shell.showItemInFolder(path),
 	};
 	/* eslint-enable @typescript-eslint/no-require-imports -- end of lazy loads */
 }
