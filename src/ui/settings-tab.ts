@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, SettingDefinitionItem } from 'obsidian';
 import type SongbookMakerPlugin from '../main';
 import { SONGBOOK_ICON } from './icon';
+import { TagListSuggest } from './tag-suggest';
 import {
 	DEFAULT_SETTINGS,
 	LANGUAGES,
@@ -61,10 +62,17 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 					{
 						name: 'Excluded tags',
 						desc: 'Notes with any of these tags, or tags nested under them, are left out. Separate with commas or spaces.',
-						control: {
-							type: 'text',
-							key: 'excludedTags',
-							placeholder: DEFAULT_SETTINGS.excludedTags,
+						// A text field with completion from the vault's tags.
+						render: (setting) => {
+							let suggest: TagListSuggest | undefined;
+							setting.addText((text) => {
+								text
+									.setPlaceholder(DEFAULT_SETTINGS.excludedTags)
+									.setValue(settings().excludedTags)
+									.onChange((value) => this.setControlValue('excludedTags', value));
+								suggest = new TagListSuggest(this.app, text.inputEl);
+							});
+							return () => suggest?.close();
 						},
 					},
 					{

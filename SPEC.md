@@ -30,7 +30,7 @@ The settings tab is declared with `getSettingDefinitions()`, so Obsidian renders
 | Setting | Default | Notes |
 |---|---|---|
 | Songs directory | empty (vault root) | Vault folder, picked with Obsidian's folder suggester, searched recursively. |
-| Excluded tags | `template` | Notes with any of these tags are left out. See [Discovering the songs](#discovering-the-songs). |
+| Excluded tags | `template` | Notes with any of these tags are left out. Typing suggests the tags used in the vault. See [Discovering the songs](#discovering-the-songs). |
 | Code block name | `chords` | Info string of the code blocks that hold song content, the same as Chord Sheets' default. Empty means the default. |
 | Output file | `~/Documents/my-songbook.epub` | Absolute path; a leading `~` expands to the user's home directory. Empty means the default. Missing parent directories are created. A relative path fails the export with an error notice. |
 | Show in folder after export | Off | Toggle. After a successful export, opens the system file manager (Finder, Explorer, …) with the EPUB selected, through Electron's `shell.showItemInFolder`. If that fails, a warning goes to the developer console; the export still counts as successful. |
