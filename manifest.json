@@ -1,7 +1,7 @@
 {
 	"id": "songbook-maker",
 	"name": "Songbook Maker",
-	"version": "0.1.0-beta.7",
+	"version": "0.1.0-beta.8",
 	"minAppVersion": "1.0.0",
 	"description": "Export chord sheets from your vault into an EPUB songbook.",
 	"author": "akabanov",
