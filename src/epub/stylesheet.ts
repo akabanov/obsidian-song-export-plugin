@@ -105,12 +105,13 @@ h1, h2 {
 }
 
 /* Guitar tabs: one block, lines set solid so the staff reads as a whole. Long
-   lines aren't wrapped. */
+   lines aren't wrapped. tab.css sets the embedded monospace font. */
 .tab {
 	margin: 0;
 	padding: 0;
 	text-indent: 0;
-	font-family: "Courier New", Courier, monospace;
+	font-family: monospace;
+	font-size: 0.8em;
 	line-height: 1.2;
 	white-space: pre;
 }
@@ -164,3 +165,18 @@ export function modernStylesheet(options: StylesheetOptions): string {
 function round(value: number): string {
 	return String(Math.round(value * 1000) / 1000);
 }
+
+/* The embedded monospace font for tabs, in a file of its own so that a reader
+   failing on @font-face drops only this file. Kobo has no monospace font of
+   its own; !important keeps a font chosen in the reader from replacing it. */
+export const TAB_STYLESHEET = `@font-face {
+	font-family: "Songbook Mono";
+	font-style: normal;
+	font-weight: normal;
+	src: url(../fonts/tab-mono.ttf);
+}
+
+.tab {
+	font-family: "Songbook Mono", monospace !important;
+}
+`;

@@ -33,7 +33,7 @@ const context = await esbuild.context({
 		...builtinModules,
 	],
 	// Obsidian installs only main.js, so bundled assets are inlined as bytes.
-	loader: { '.jpg': 'binary' },
+	loader: { '.jpg': 'binary', '.ttf': 'binary' },
 	format: 'cjs',
 	target: 'es2021',
 	logLevel: 'info',

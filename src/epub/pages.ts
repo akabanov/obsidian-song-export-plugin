@@ -3,7 +3,7 @@ import { ImageSize } from './image-size';
 import { escapeXml } from './xml';
 
 /** Stylesheet paths relative to the XHTML pages in `text/`. */
-const STYLESHEETS = ['../styles/book.css', '../styles/modern.css'];
+const STYLESHEETS = ['../styles/book.css', '../styles/modern.css', '../styles/tab.css'];
 
 // A fleuron marking song titles: the light swash ornament (U+1F658) from Noto
 // Sans Symbols 2, © Google, SIL Open Font License 1.1.

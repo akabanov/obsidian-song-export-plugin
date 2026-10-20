@@ -132,3 +132,5 @@ The tag must match the `version` in `manifest.json`, or the workflow fails.
 ## License
 
 [0BSD](LICENSE)
+
+Books embed a subset of [Noto Sans Mono](https://fonts.google.com/noto/specimen/Noto+Sans+Mono) for guitar tabs (`assets/tab-mono.ttf`), © Google, licensed under the [SIL Open Font License 1.1](https://openfontlicense.org).

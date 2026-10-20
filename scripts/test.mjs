@@ -20,7 +20,7 @@ await esbuild.build({
 	format: 'esm',
 	outExtension: { '.js': '.mjs' },
 	external: ['obsidian'],
-	loader: { '.jpg': 'binary' },
+	loader: { '.jpg': 'binary', '.ttf': 'binary' },
 	sourcemap: 'inline',
 	logLevel: 'warning',
 });

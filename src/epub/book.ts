@@ -1,3 +1,4 @@
+import tabFont from '../../assets/tab-mono.ttf';
 import { Section } from '../song/sections';
 import { imageSize } from './image-size';
 import {
@@ -15,7 +16,7 @@ import {
 	sectionTitlePage,
 	songTitlePage,
 } from './pages';
-import { bookStylesheet, modernStylesheet, songIconWidth } from './stylesheet';
+import { bookStylesheet, modernStylesheet, songIconWidth, TAB_STYLESHEET } from './stylesheet';
 import { createZip, Deflate, ZipEntry } from './zip';
 
 export interface BookSong {
@@ -76,6 +77,10 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 	manifest.push({ id: 'ncx', href: 'toc.ncx', mediaType: 'application/x-dtbncx+xml' });
 	manifest.push({ id: 'css', href: 'styles/book.css', mediaType: 'text/css' });
 	manifest.push({ id: 'css-modern', href: 'styles/modern.css', mediaType: 'text/css' });
+	manifest.push({ id: 'css-tab', href: 'styles/tab.css', mediaType: 'text/css' });
+	// An EPUB 3 core media type that Adobe RMSDK (Kobo) also recognizes.
+	manifest.push({ id: 'font-tab', href: 'fonts/tab-mono.ttf', mediaType: 'application/vnd.ms-opentype' });
+	files.push({ path: 'OEBPS/fonts/tab-mono.ttf', data: tabFont });
 
 	let coverImageId: string | null = null;
 	if (book.cover) {
@@ -142,6 +147,7 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 
 	addText('styles/book.css', bookStylesheet(styles));
 	addText('styles/modern.css', modernStylesheet(styles));
+	addText('styles/tab.css', TAB_STYLESHEET);
 	addText('nav.xhtml', navDocument(lang, book.title, toc));
 	addText('toc.ncx', ncxDocument(book.id, book.title, toc));
 	addText(

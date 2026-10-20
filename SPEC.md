@@ -141,7 +141,7 @@ The section title page shows only the section name, centered both vertically and
 
 The section content shows the pre-processed lines in order. Each line is its own `<div>`, and empty lines are kept as vertical gaps (a `<div>` holding a no-break space). `<div>` rather than `<p>`, because a `<div>` has no default margins and readers that override paragraph spacing (Kobo) leave it alone, so lines don't get blank lines between them. Long lines wrap; hyphenation is turned off. All text is HTML-escaped.
 
-A tab block is a single `<pre class="tab">`, its lines separated by newlines, in a monospace font (`"Courier New", Courier, monospace`) with line-height 1.2 and no margins, so the staff lines sit close together and the columns line up. Nothing follows the opening tag before the first line: XHTML, parsed as XML, keeps a leading newline that HTML would drop. Tab lines don't wrap.
+A tab block is a single `<pre class="tab">`, its lines separated by newlines, in an embedded monospace font at 0.8em (80% of the content text), with line-height 1.2 and no margins, so the staff lines sit close together and the columns line up. Nothing follows the opening tag before the first line: XHTML, parsed as XML, keeps a leading newline that HTML would drop. Tab lines don't wrap.
 
 On a page of its own, the content block is centered vertically; the lines inside it stay left-aligned.
 
@@ -154,12 +154,15 @@ Title pages and section content pages are centered vertically the same way. Each
 
 ## Typography
 
-The book sets no font family, except the monospace font of tab blocks, so the text uses the reader's font setting. Song and section titles are bold.
+The book sets no font family, except the monospace font of tab blocks, so the text uses the reader's font setting.
 
-The styles are split into two stylesheets, linked from every page in this order:
+Tab blocks use a font embedded in the book, because Kobo offers no monospace font of its own: a subset of Noto Sans Mono Regular (© Google, SIL Open Font License 1.1, whose notice stays in the font's name table) with Basic Latin, Latin-1, typographic quotes and dashes, and the ♭ ♮ ♯ signs, without hinting (about 18 KB). It is `fonts/tab-mono.ttf`, with the media type `application/vnd.ms-opentype`, an EPUB 3 core type that RMSDK also recognizes. Song and section titles are bold.
+
+The styles are split into three stylesheets, linked from every page in this order:
 
 - `styles/book.css` uses only CSS 2.1 (plus the `hyphens` properties), with no `calc()`, `vh`, flexbox, custom properties or `@font-face`. Kobo renders sideloaded EPUBs with Adobe RMSDK, which drops a whole stylesheet when it meets one value it can't parse, so this file must parse there.
 - `styles/modern.css` holds the [vertical centering](#vertical-centering) and overrides the values in `book.css` that are tuned for RMSDK (the title page's top padding, the fleuron's size and gap). Its `calc()` is deliberate: RMSDK skips the whole file, rather than applying part of it, and keeps the values from `book.css`.
+- `styles/tab.css` declares the embedded font with `@font-face` and applies it to tab blocks, with `!important` so that a font chosen in the reader doesn't replace it. It is a file of its own so that a reader failing on `@font-face` drops only this file; `book.css` then falls back to the generic `monospace`.
 
 All sizes are in `em`, relative to the reader's base font size, so the reader's font-size control still scales everything:
 

@@ -211,6 +211,15 @@ describe('buildEpub', () => {
 		);
 	});
 
+	it('embeds the monospace font for tabs in a stylesheet of its own', () => {
+		assert.match(opf, /<item id="font-tab" href="fonts\/tab-mono.ttf" media-type="application\/vnd.ms-opentype"\/>/);
+		const font = entries.find((entry) => entry.path === 'OEBPS/fonts/tab-mono.ttf');
+		assert.deepEqual([...(font?.data.slice(0, 4) ?? [])], [0, 1, 0, 0]);
+		const css = textOf(entries, 'OEBPS/styles/tab.css');
+		assert.match(css, /src: url\(..\/fonts\/tab-mono.ttf\);/);
+		assert.match(css, /font-family: "Songbook Mono", monospace !important;/);
+	});
+
 	it('sizes titles from the multipliers in a stylesheet Adobe RMSDK can parse', () => {
 		const css = textOf(entries, 'OEBPS/styles/book.css');
 		assert.match(css, /body \{\n\tfont-size: 80%;/);
@@ -225,8 +234,7 @@ describe('buildEpub', () => {
 		assert.match(modern, /\.song-icon \{\n\twidth: 5.76em;\n\theight: 3.965em;/);
 		assert.match(opf, /<item id="css-modern" href="styles\/modern.css" media-type="text\/css"\/>/);
 		const page = textOf(entries, 'OEBPS/text/song-001-01.xhtml');
-		assert.match(page, /href="..\/styles\/book.css"\/>\n<link rel="stylesheet" type="text\/css" href="..\/styles\/modern.css"\/>/);
-		assert.ok(!entries.some((e) => e.path.includes('fonts/')));
+		assert.match(page, /href="..\/styles\/book.css"\/>\n<link rel="stylesheet" type="text\/css" href="..\/styles\/modern.css"\/>\n<link rel="stylesheet" type="text\/css" href="..\/styles\/tab.css"\/>/);
 	});
 
 	it('falls back to an <img> cover when the image size is unknown', () => {
