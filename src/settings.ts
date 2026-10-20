@@ -83,6 +83,9 @@ export function migrateSettings(
 	return settings;
 }
 
+const KOBO_HELP_URL =
+	'https://github.com/akabanov/obsidian-songbook-maker-plugin#reading-on-a-kobo';
+
 /** Text size ranges from 65% to 130% of the reader's font size. */
 export const MIN_TEXT_SIZE = 65;
 export const MAX_TEXT_SIZE = 130;
@@ -161,6 +164,12 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Cover image')
+			.setDesc(
+				createFragment((desc) => {
+					desc.appendText('Kobo may keep showing an old cover. ');
+					desc.createEl('a', { text: 'How to fix it', href: KOBO_HELP_URL });
+				}),
+			)
 			.addDropdown((dropdown) =>
 				dropdown
 					.addOption('none', 'None')

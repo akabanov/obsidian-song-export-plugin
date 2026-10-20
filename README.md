@@ -66,6 +66,8 @@ Kobo opens sideloaded `.epub` files with its older Adobe renderer, which doesn't
 
 For a sharp cover, use an image at least as large as your screen (for example 1072×1448 on a Clara, 1264×1680 on a Libra). Smaller images are scaled up to fill the page.
 
+If the sleep screen keeps showing the old cover after you change it, the Kobo is holding on to its cached cover. Remove the book from the Kobo, delete the hidden `.kobo-images` folder at its root, power it off completely (not just to sleep), then turn it on and copy the book back. Saving the book under a new file name (**Output file**) also works, without the restart.
+
 ## Development
 
 ```bash
