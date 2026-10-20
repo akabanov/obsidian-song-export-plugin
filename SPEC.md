@@ -53,7 +53,7 @@ The EPUB has a stable `dc:identifier` (a UUID generated once and stored in plugi
 
 ### Cover
 
-- **Default:** the bundled cover `assets/default-cover.jpg` (a black-and-white guitarist illustration titled "my songbook", 896×1200). It is inlined into `main.js` at build time, because Obsidian installs only `main.js` and `manifest.json`. The title on it is part of the image, so it doesn't change with the *Book title* setting.
+- **Default:** the bundled cover `assets/default-cover.jpg`. It is at least as large as current Kobo screens (1440 px wide or more), so the Kobo only ever scales it down: its sleep-screen copy of a smaller cover, scaled up, came out grainy, even though the page rendered the same image cleanly. It is a baseline RGB JPEG, the most common kind of cover, rather than a progressive or one-channel grayscale one. It is inlined into `main.js` at build time, because Obsidian installs only `main.js` and `manifest.json`.
 - **Custom image:** the image at *Cover image path*. If the file is missing or isn't JPEG, PNG or WebP, the export fails with an error notice.
 - **None:** the book has no cover.
 

@@ -249,7 +249,7 @@ describe('buildEpub with the default cover', () => {
 
 	it('scales the cover to the page with an SVG wrapper', () => {
 		const cover = textOf(entries, 'OEBPS/text/cover.xhtml');
-		assert.match(cover, /<svg [^>]*width="100%" height="100%" viewBox="0 0 896 1200" preserveAspectRatio="xMidYMid meet"><image width="896" height="1200" xlink:href="..\/images\/cover.jpg"\/><\/svg>/);
+		assert.match(cover, /<svg [^>]*width="100%" height="100%" viewBox="0 0 1440 1929" preserveAspectRatio="xMidYMid meet"><image width="1440" height="1929" xlink:href="..\/images\/cover.jpg"\/><\/svg>/);
 		assert.match(cover, /@page \{ margin: 0; padding: 0; \}/);
 		const opf = textOf(entries, 'OEBPS/content.opf');
 		assert.match(opf, /<item id="cover" href="text\/cover.xhtml" media-type="application\/xhtml\+xml" properties="svg"\/>/);

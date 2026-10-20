@@ -36,7 +36,7 @@ describe('detectImageType', () => {
 
 describe('imageSize', () => {
 	it('reads JPEG, PNG and WebP dimensions', () => {
-		assert.deepEqual(imageSize(DEFAULT_COVER.bytes, 'image/jpeg'), { width: 896, height: 1200 });
+		assert.deepEqual(imageSize(DEFAULT_COVER.bytes, 'image/jpeg'), { width: 1440, height: 1929 });
 
 		const png = new Uint8Array(24);
 		png.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
