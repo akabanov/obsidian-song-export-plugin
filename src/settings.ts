@@ -1,25 +1,23 @@
-import { App, PluginSettingTab, Setting } from 'obsidian';
-import type SongbookMakerPlugin from './main';
+/** Book languages, by code, with the names shown in the settings. */
+export const LANGUAGES = {
+	cs: 'Czech',
+	de: 'German',
+	en: 'English',
+	es: 'Spanish',
+	fr: 'French',
+	it: 'Italian',
+	ja: 'Japanese',
+	ko: 'Korean',
+	nl: 'Dutch',
+	pl: 'Polish',
+	pt: 'Portuguese',
+	ru: 'Russian',
+	sv: 'Swedish',
+	uk: 'Ukrainian',
+	zh: 'Chinese',
+} as const;
 
-export const LANGUAGES = [
-	'cs',
-	'de',
-	'en',
-	'es',
-	'fr',
-	'it',
-	'ja',
-	'ko',
-	'nl',
-	'pl',
-	'pt',
-	'ru',
-	'sv',
-	'uk',
-	'zh',
-] as const;
-
-export type Language = (typeof LANGUAGES)[number];
+export type Language = keyof typeof LANGUAGES;
 
 export type CoverImage = 'none' | 'default' | 'custom';
 
@@ -90,11 +88,31 @@ export function migrateSettings(
 	settings.monoTextSize = clamp(settings.monoTextSize, MIN_MONO_TEXT_SIZE, MAX_MONO_TEXT_SIZE);
 	settings.sectionTitleScale = clamp(settings.sectionTitleScale, MIN_SCALE, MAX_SCALE);
 	settings.songTitleScale = clamp(settings.songTitleScale, MIN_SCALE, MAX_SCALE);
+	if (!(settings.bookLanguage in LANGUAGES)) settings.bookLanguage = DEFAULT_SETTINGS.bookLanguage;
 	return settings;
 }
 
-const KOBO_HELP_URL =
-	'https://github.com/akabanov/obsidian-songbook-maker-plugin#reading-on-a-kobo';
+/** Text settings whose surrounding whitespace means nothing. */
+const TRIMMED_SETTINGS = [
+	'songsDirectory',
+	'excludedTags',
+	'codeBlockName',
+	'outputFile',
+	'bookTitle',
+	'bookAuthor',
+	'coverImagePath',
+] as const;
+
+/**
+ * A copy of `settings` with text settings trimmed. They are trimmed when used
+ * rather than as they're typed, so that typing a space isn't undone.
+ * *Title split sequence* isn't trimmed: its spaces are part of it.
+ */
+export function trimSettings(settings: SongbookMakerSettings): SongbookMakerSettings {
+	const trimmed = { ...settings };
+	for (const key of TRIMMED_SETTINGS) trimmed[key] = trimmed[key].trim();
+	return trimmed;
+}
 
 /** Text size ranges from 65% to 130% of the reader's font size. */
 export const MIN_TEXT_SIZE = 65;
@@ -110,223 +128,4 @@ export const MAX_SCALE = 3;
 
 function clamp(value: number, min: number, max: number): number {
 	return Math.min(max, Math.max(min, value));
-}
-
-export class SongbookMakerSettingTab extends PluginSettingTab {
-	plugin: SongbookMakerPlugin;
-
-	constructor(app: App, plugin: SongbookMakerPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const { containerEl } = this;
-		containerEl.empty();
-
-		this.addText(
-			'Songs directory',
-			'Vault folder searched recursively for song notes. Empty means the vault root.',
-			'songsDirectory',
-		);
-		this.addText(
-			'Excluded tags',
-			'Notes with any of these tags, or tags nested under them, are left out. Separate with commas or spaces.',
-			'excludedTags',
-		);
-		this.addText(
-			'Code block name',
-			'Notes with code blocks of this type are songs; only their contents are exported.',
-			'codeBlockName',
-		);
-		this.addText(
-			'Output file',
-			'Absolute path of the EPUB file. A leading ~ expands to your home directory.',
-			'outputFile',
-		);
-		this.addToggle(
-			'Show in folder after export',
-			"Opens your system's file manager with the EPUB file selected.",
-			'showInFolder',
-		);
-		this.addText('Book title', 'Shown by e-book readers.', 'bookTitle');
-		this.addText('Book author', 'Leave empty to omit.', 'bookAuthor');
-
-		new Setting(containerEl)
-			.setName('Book language')
-			.addDropdown((dropdown) => {
-				for (const lang of LANGUAGES) {
-					dropdown.addOption(lang, lang.toUpperCase());
-				}
-				dropdown
-					.setValue(this.plugin.settings.bookLanguage)
-					.onChange(async (value) => {
-						this.plugin.settings.bookLanguage = value as Language;
-						await this.plugin.saveSettings();
-					});
-			});
-
-		new Setting(containerEl)
-			.setName('Title split sequence')
-			.setDesc(
-				'The song title is split into two lines at the first occurrence of this text. Leave empty to never split.',
-			)
-			.addText((text) =>
-				text
-					.setValue(this.plugin.settings.titleSplitSequence)
-					.onChange(async (value) => {
-						// Not trimmed: surrounding spaces are part of the sequence.
-						this.plugin.settings.titleSplitSequence = value;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName('Cover image')
-			.setDesc(
-				createFragment((desc) => {
-					desc.appendText('Kobo may keep showing an old cover. ');
-					desc.createEl('a', { text: 'How to fix it', href: KOBO_HELP_URL });
-				}),
-			)
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption('none', 'None')
-					.addOption('default', 'Default')
-					.addOption('custom', 'Custom image')
-					.setValue(this.plugin.settings.coverImage)
-					.onChange(async (value) => {
-						this.plugin.settings.coverImage = value as CoverImage;
-						await this.plugin.saveSettings();
-						this.display();
-					}),
-			);
-		if (this.plugin.settings.coverImage === 'custom') {
-			this.addText(
-				'Cover image path',
-				'JPEG, PNG or WebP. A vault path, or an absolute path starting with / or ~.',
-				'coverImagePath',
-			);
-		}
-
-		this.addToggle(
-			'Flashcard-style sections',
-			'Each section title gets a page, and its content follows on the next, for drilling one part at a time. Turn off for a regular songbook layout.',
-			'sectionTitleOwnPage',
-		);
-		this.addToggle(
-			'Use regular font',
-			"Songs use your reader's font. Its letters aren't all the same width, so spaces can't line chords up over their syllables anyway: extra spaces are dropped, and each chord line shows just the chords, in order, above its lyric line. Easier to read on a small screen. Turn off to keep the spacing from your notes, in a monospaced font.",
-			'regularFont',
-		);
-
-		this.addPercent(
-			'Text size',
-			"Percent of your reader's font size. Titles scale with it.",
-			'textSize',
-			MIN_TEXT_SIZE,
-			MAX_TEXT_SIZE,
-		);
-		this.addPercent(
-			'Monospace text size',
-			'Percent of the text size, for guitar tabs, and for all song content with the regular font off.',
-			'monoTextSize',
-			MIN_MONO_TEXT_SIZE,
-			MAX_MONO_TEXT_SIZE,
-		);
-		this.addScale(
-			'Section title size',
-			'Multiplier of the content text size.',
-			'sectionTitleScale',
-		);
-		this.addScale(
-			'Song title size',
-			'Multiplier of the section title size.',
-			'songTitleScale',
-		);
-	}
-
-	private addText(
-		name: string,
-		desc: string,
-		key:
-			| 'songsDirectory'
-			| 'excludedTags'
-			| 'codeBlockName'
-			| 'outputFile'
-			| 'coverImagePath'
-			| 'bookTitle'
-			| 'bookAuthor',
-	): void {
-		new Setting(this.containerEl)
-			.setName(name)
-			.setDesc(desc)
-			.addText((text) =>
-				text
-					.setPlaceholder(DEFAULT_SETTINGS[key])
-					.setValue(this.plugin.settings[key])
-					.onChange(async (value) => {
-						this.plugin.settings[key] = value.trim();
-						await this.plugin.saveSettings();
-					}),
-			);
-	}
-
-	private addToggle(
-		name: string,
-		desc: string,
-		key: 'showInFolder' | 'sectionTitleOwnPage' | 'regularFont',
-	): void {
-		new Setting(this.containerEl)
-			.setName(name)
-			.setDesc(desc)
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings[key]).onChange(async (value) => {
-					this.plugin.settings[key] = value;
-					await this.plugin.saveSettings();
-				}),
-			);
-	}
-
-	private addPercent(
-		name: string,
-		desc: string,
-		key: 'textSize' | 'monoTextSize',
-		min: number,
-		max: number,
-	): void {
-		new Setting(this.containerEl)
-			.setName(name)
-			.setDesc(desc)
-			.addSlider((slider) =>
-				slider
-					.setLimits(min, max, 5)
-					.setValue(this.plugin.settings[key])
-					.setDynamicTooltip()
-					.onChange(async (value) => {
-						this.plugin.settings[key] = value;
-						await this.plugin.saveSettings();
-					}),
-			);
-	}
-
-	private addScale(
-		name: string,
-		desc: string,
-		key: 'sectionTitleScale' | 'songTitleScale',
-	): void {
-		new Setting(this.containerEl)
-			.setName(name)
-			.setDesc(desc)
-			.addSlider((slider) =>
-				slider
-					.setLimits(MIN_SCALE, MAX_SCALE, 0.25)
-					.setValue(this.plugin.settings[key])
-					.setDynamicTooltip()
-					.onChange(async (value) => {
-						this.plugin.settings[key] = value;
-						await this.plugin.saveSettings();
-					}),
-			);
-	}
 }

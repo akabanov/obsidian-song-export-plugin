@@ -1,7 +1,7 @@
 {
 	"name": "obsidian-songbook-maker-plugin",
 	"version": "0.1.0-beta.9",
-	"description": "Obsidian plugin that exports chord sheets into an EPUB songbook",
+	"description": "Obsidian plugin that exports chord sheets (Chord Sheets plugin format) into an EPUB songbook for e-readers",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
@@ -13,10 +13,16 @@
 	},
 	"keywords": [
 		"obsidian",
-		"plugin",
-		"epub",
+		"obsidian-plugin",
+		"chord-sheets",
 		"chords",
-		"songbook"
+		"lyrics",
+		"songbook",
+		"guitar-tabs",
+		"epub",
+		"e-reader",
+		"kobo",
+		"flashcards"
 	],
 	"license": "0BSD",
 	"devDependencies": {
@@ -24,11 +30,22 @@
 		"@types/node": "^22.15.17",
 		"esbuild": "0.25.5",
 		"eslint": "^9.39.4",
-		"eslint-plugin-obsidianmd": "^0.4.0",
+		"eslint-plugin-obsidianmd": "^0.4.2",
 		"globals": "^17.6.0",
 		"jiti": "^2.6.1",
-		"obsidian": "latest",
+		"obsidian": "^1.14.4",
 		"typescript": "^5.8.3",
 		"typescript-eslint": "^8.59.1"
+	},
+	"overrides": {
+		"moment": "^2.31.0"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/akabanov/obsidian-songbook-maker-plugin.git"
+	},
+	"homepage": "https://github.com/akabanov/obsidian-songbook-maker-plugin#readme",
+	"bugs": {
+		"url": "https://github.com/akabanov/obsidian-songbook-maker-plugin/issues"
 	}
 }

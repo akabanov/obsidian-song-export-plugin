@@ -1,10 +1,11 @@
 # Songbook Maker — Specification
 
-An Obsidian plugin that exports song notes from the vault into a single EPUB songbook for learning and practice. Every song starts on a new page. By default the song and each of its sections get their own title pages, and each section's content gets its own page, like flash cards; two settings let titles and content run together instead (see [Page layout](#page-layout)).
+An Obsidian plugin that exports song notes from the vault into a single EPUB songbook for learning and practice. Songs are written in `chords` code blocks, the format of the [Chord Sheets](https://github.com/olvidalo/obsidian-chord-sheets) plugin. Every song opens with its title on a page of its own. By default each section title also gets a page, with the section's content on the next, like flash cards; a setting lets the sections run together instead (see [Page layout](#page-layout)).
 
 ## Platform
 
 - Desktop only (`isDesktopOnly: true`): the book is written to an absolute path outside the vault, which needs Node's `fs`.
+- Obsidian 1.13 or later (`minAppVersion: 1.13.0`), for the declarative settings API.
 - The plugin makes no network requests.
 
 ## Triggering the export
@@ -24,26 +25,31 @@ Starting an export while one is running does nothing.
 
 ## Settings
 
+The settings tab is declared with `getSettingDefinitions()`, so Obsidian renders it and indexes every setting for the settings search. It has the songbook icon. Settings are in three groups, in this order:
+
 | Setting | Default | Notes |
 |---|---|---|
-| Songs directory | empty (vault root) | Vault-relative path, searched recursively. |
+| Songs directory | empty (vault root) | Vault folder, picked with Obsidian's folder suggester, searched recursively. |
 | Excluded tags | `template` | Notes with any of these tags are left out. See [Discovering the songs](#discovering-the-songs). |
-| Code block name | `chords` | Info string of the code blocks that hold song content. Empty means the default. |
-| Output file | `~/Documents/my-songbook.epub` | Absolute path; a leading `~` expands to the user's home directory. Missing parent directories are created. A relative path fails the export with an error notice. |
+| Code block name | `chords` | Info string of the code blocks that hold song content, the same as Chord Sheets' default. Empty means the default. |
+| Output file | `~/Documents/my-songbook.epub` | Absolute path; a leading `~` expands to the user's home directory. Empty means the default. Missing parent directories are created. A relative path fails the export with an error notice. |
 | Show in folder after export | Off | Toggle. After a successful export, opens the system file manager (Finder, Explorer, …) with the EPUB selected, through Electron's `shell.showItemInFolder`. If that fails, a warning goes to the developer console; the export still counts as successful. |
-| Book title | `My Songbook` | EPUB `dc:title`. |
+| **Book** | | |
+| Book title | `My Songbook` | EPUB `dc:title`. Empty means the default. |
 | Book author | `Obsidian` | EPUB `dc:creator`; omitted when empty. |
-| Book language | `EN` | Dropdown, sorted alphabetically: `CS`, `DE`, `EN`, `ES`, `FR`, `IT`, `JA`, `KO`, `NL`, `PL`, `PT`, `RU`, `SV`, `UK`, `ZH`. Written to EPUB `dc:language` and `xml:lang` as the lowercase code (`en`). |
-| Title split sequence | ` - ` (space, hyphen, space) | Where the song title is split into two lines. Empty means never split. |
-| Cover image | Default | Dropdown: *None*, *Default* (the bundled cover) or *Custom image*. |
+| Book language | English | Dropdown of language names, sorted alphabetically: Chinese, Czech, Dutch, English, French, German, Italian, Japanese, Korean, Polish, Portuguese, Russian, Spanish, Swedish, Ukrainian. Written to EPUB `dc:language` and `xml:lang` as the language code (`en`). The description explains that readers use it for the dictionary and the text-to-speech voice, and that songs in other languages still show normally. A saved code not in the list falls back to English. |
+| Cover image | Default | Dropdown: *None*, *Default* (the bundled cover) or *Custom image*. The description links to the Kobo cover-cache help in the README. |
 | Cover image path | empty | Shown only for *Custom image*. JPEG, PNG or WebP, detected from the file contents. A path starting with `/` or `~` is a filesystem path; anything else is relative to the vault root. |
-| Song title on its own page | On | Toggle. See [Page layout](#page-layout). |
-| Section title on its own page | On | Toggle. See [Page layout](#page-layout). |
-| Use regular font | On | Toggle. On: song content uses the reader's font, with whitespace collapsed. Off: it keeps its spacing, in the embedded monospace font. See [Section pre-processing](#section-pre-processing) and [Typography](#typography). |
-| Text size | `100` | Percent of the reader's font size. Slider from 65 to 130 in steps of 5. |
-| Monospace text size | `70` | Percent of the content text size, for monospace text: tab blocks, and all song content with *Use regular font* off. Slider from 50 to 100 in steps of 5. |
-| Section title size | `1.25` | Multiplier of the content text size. Slider from 1 to 3 in steps of 0.25. |
-| Song title size | `1.25` | Multiplier of the **section title** size (so about 1.56× content by default). Chaining sizes like this is the usual modular type scale. Slider from 1 to 3 in steps of 0.25. Saved values above 3 (allowed up to 0.1.0-beta.3) are lowered to 3 on load. |
+| **Layout** | | |
+| Title split sequence | ` - ` (space, hyphen, space) | Where the song title is split into two lines. Empty means never split. Not trimmed: its spaces are part of it. |
+| Flashcard-style sections | On | Toggle. See [Page layout](#page-layout). |
+| Use regular font | On | Toggle. On: song content uses the reader's font, with whitespace collapsed. Off: it keeps its spacing, in the embedded monospace font. The description explains the trade-off. See [Section pre-processing](#section-pre-processing) and [Typography](#typography). |
+| Text size | `100%` | Percent of the reader's font size. Slider from 65 to 130 in steps of 5. |
+| Monospace text size | `70%` | Percent of the content text size, for monospace text: tab blocks, and all song content with *Use regular font* off. Slider from 50 to 100 in steps of 5. |
+| Section title size | `1.25×` | Multiplier of the content text size. Slider from 1 to 3 in steps of 0.25. |
+| Song title size | `1.25×` | Multiplier of the **section title** size (so about 1.56× content by default). Chaining sizes like this is the usual modular type scale. Slider from 1 to 3 in steps of 0.25. Saved values above 3 (allowed up to 0.1.0-beta.3) are lowered to 3 on load. |
+
+Text settings other than *Title split sequence* are trimmed when the export reads them, not as they're typed, so typing a space isn't undone. Saved slider values outside their range are moved into it on load.
 
 ## Output
 
@@ -67,19 +73,14 @@ The cover page fills the screen, scaled up or down without cropping or distortio
 
 ### Page layout
 
-Two independent toggles decide which titles get a page to themselves. Whatever they are set to, every song starts on a new page, and the cover (if any) comes first. Each page below is a separate XHTML file in the spine, so it starts on a new page in every reader.
+Every song starts with a page of its own holding only the song title (see [Songs](#songs)). The cover (if any) comes first. Each page below is a separate XHTML file in the spine, so it starts on a new page in every reader.
 
-**Song title on its own page** (default on):
+**Flashcard-style sections** (default on) decides what follows the song title page:
 
-- On: the song title (with its icon) is alone on a page, centered both ways. The song's content starts on the next page.
-- Off: the song title shares its page with what follows: the first section title page, or the start of the running sections.
+- On: each section title is alone on a page, centered both ways, and the section's content starts on the next page, like the front and back of a flash card. Content that fits on one page is centered vertically. Longer content starts at the top and flows over as many pages as it needs.
+- Off: the sections run together on one page that flows as long as it needs: each section title, left-aligned, then its content. A section title is kept on the same page as the start of its content where the reader supports it (`page-break-after: avoid`).
 
-**Section title on its own page** (default on):
-
-- On: each section title is alone on a page, centered both ways, and the section's content starts on the next page. Content that fits on one page is centered vertically. Longer content starts at the top and flows over as many pages as it needs. With *Song title on its own page* off, the first section's title page also carries the song title above it.
-- Off: the sections run together on one page that flows as long as it needs: each section title, left-aligned, then its content. A section title is kept on the same page as the start of its content where the reader supports it (`page-break-after: avoid`). With *Song title on its own page* off, the song title sits centered horizontally at the top of that page, not vertically.
-
-Both on gives flash cards, for drilling one section at a time; both off gives a book, for reading a song straight through. Sizes, title split and TOC (one entry per song, linking to the page where the song starts) are the same in every layout.
+Sizes, title split and TOC (one entry per song, linking to its title page) are the same in both layouts.
 
 ## Discovering the songs
 
@@ -97,9 +98,9 @@ Code blocks of other types (`metronome`, `alphatex`, …) and all text outside `
 
 The **song title** is the note's file name without the `.md` extension.
 
-The song title page shows only the song title, split into two lines at the first occurrence of the title split sequence. With the default ` - `, `Armstrong - What a Wonderful World` becomes `Armstrong` on line one and `What a Wonderful World` on line two. If the title doesn't contain the sequence, the sequence is empty, or splitting would leave one of the lines empty (e.g. ` - Intro`), the title is shown on one line. Both parts are trimmed. Both lines use the same size. The lines are separated by `<br/>`, so the split doesn't depend on the stylesheet. When the song title is on a page of its own, an empty line (a second `<br/>`) separates the two lines. The TOC entry uses the full, unsplit title.
+The song title page shows only the song title, split into two lines at the first occurrence of the title split sequence. With the default ` - `, `Armstrong - What a Wonderful World` becomes `Armstrong` on line one and `What a Wonderful World` on line two. If the title doesn't contain the sequence, the sequence is empty, or splitting would leave one of the lines empty (e.g. ` - Intro`), the title is shown on one line. Both parts are trimmed. Both lines use the same size. The lines are separated by `<br/>`, so the split doesn't depend on the stylesheet, with an empty line (a second `<br/>`) between them. The TOC entry uses the full, unsplit title.
 
-On a page of its own, the text is centered both vertically and horizontally. A black fleuron sits above the title, so a song title page can be told apart from a section title page at a glance: the light swash ornament (U+1F658) from Noto Sans Symbols 2 (SIL Open Font License), as an inline SVG path bundled with the plugin.
+The text is centered both vertically and horizontally. A black fleuron sits above the title, so a song title page can be told apart from a section title page at a glance: the light swash ornament (U+1F658) from Noto Sans Symbols 2 (SIL Open Font License), as an inline SVG path bundled with the plugin.
 
 The fleuron scales with the song title: its width is a multiple of the song title size, so changing either title size multiplier resizes it too. Its size and the gap below it are tuned per renderer, because Kobo's Adobe renderer draws them differently:
 
@@ -123,7 +124,7 @@ Text before the first section header is discarded.
 These steps run in order on each line of a section's body:
 
 1. Trim the line. With *Use regular font* off, trim only its end.
-2. Strip line-end hints: remove one or more trailing `%` + letter tokens (e.g. `%t`, `%c`) together with the whitespace before them, matching `(^|\s+)(%[A-Za-z]\s*)+$`. These are rendering hints for the Obsidian plugin that displays `chords` blocks. For example, `|b7 6m| |5 4| %t` becomes `|b7 6m| |5 4|`.
+2. Strip line-end hints: remove one or more trailing `%` + letter tokens (e.g. `%t`, `%c`) together with the whitespace before them, matching `(^|\s+)(%[A-Za-z]\s*)+$`. These are line-type markers of the Chord Sheets plugin (`%c` marks a chord line, `%t` a text line). For example, `|b7 6m| |5 4| %t` becomes `|b7 6m| |5 4|`.
 3. Group tab lines: lines that, trimmed, start with a string name followed by `|`, matching `^[A-Ga-g][#b]?\|` (e.g. `e|-----`, `B|--3--`, `Eb|---`). Consecutive tab lines form one tab block, kept trimmed but otherwise as they are; step 4 doesn't apply to them. An empty line between tab lines starts a new block.
 4. Collapse each run of whitespace characters into a single space. Skipped with *Use regular font* off. A line of only whitespace becomes empty either way.
 

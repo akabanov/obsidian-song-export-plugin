@@ -2,8 +2,8 @@
 	"id": "songbook-maker",
 	"name": "Songbook Maker",
 	"version": "0.1.0-beta.9",
-	"minAppVersion": "1.0.0",
-	"description": "Export chord sheets from your vault into an EPUB songbook.",
+	"minAppVersion": "1.13.0",
+	"description": "Export chord sheets from your vault into an EPUB songbook for e-readers like Kobo: chords over lyrics, guitar tabs, and song sections as flashcards. Reads the chords code blocks of the Chord Sheets plugin.",
 	"author": "akabanov",
 	"authorUrl": "https://github.com/akabanov",
 	"isDesktopOnly": true

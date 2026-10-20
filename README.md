@@ -1,8 +1,10 @@
 # 🎸 Songbook Maker for Obsidian
 
-Turn the chord sheets in your vault into a songbook you can learn from anywhere: one EPUB with all your songs, ready to read on your e-reader, tablet or phone between practice sessions.
+Turn the chord sheets in your vault into a songbook you can learn from anywhere: one EPUB with all your songs (chords over lyrics, guitar tabs and all), ready to read on your e-reader, tablet or phone between practice sessions.
 
-> **Status:** early development. The export follows [SPEC.md](SPEC.md) but hasn't had a public release yet.
+Songbook Maker reads the `chords` code blocks of the [Chord Sheets](https://github.com/olvidalo/obsidian-chord-sheets) plugin, `%c`/`%t` line markers included, so the songs you already play from in Obsidian go straight into the book.
+
+> **Status:** beta. Until it's listed in Community plugins, install it with [BRAT](#install-with-brat). The export follows [SPEC.md](SPEC.md).
 
 ## How it works
 
@@ -28,7 +30,18 @@ Click the songbook icon in the left ribbon, or run **Export songs to EPUB**, and
 - 🖼️ **It has a cover**: a bundled black-and-white illustration, your own image, or none.
 - ✍️ **It reads well on e-ink**: the text uses your reader's font, sized relative to your other books (say, 80% to fit long lines), titles are sized by multipliers you choose, and everything follows your reader's font-size setting. The book works with Kobo's stricter EPUB renderer too.
 - 🎼 **Chords sit on their own line, not above a syllable**: in Obsidian a code block uses a monospaced font, where every letter is the same width, so spaces can line a chord up with its word. Your reader's font isn't monospaced, so those spaces wouldn't line up anyway; the book drops them on purpose, and each chord line shows just the chords, in order, above its lyric line. Prefer chords over their syllables? Turn off **Use regular font**: songs keep their spacing, in a monospaced font embedded in the book.
+- 🎸 **Guitar tabs stay readable**: tab lines (`e|---0---|`) are set in a monospaced font embedded in the book, so the strings line up even on readers without a monospaced font of their own.
 - 🗂️ **The table of contents stays short**: songs only, in alphabetical order.
+- 🏷️ **Templates stay out**: notes tagged `#template` (or any tags you choose) are left out of the book.
+
+## Works with your chord plugins
+
+Songbook Maker doesn't render chords in Obsidian; it exports them. Keep using your favourite plugin for writing and playing, and export with this one:
+
+- [**Chord Sheets**](https://github.com/olvidalo/obsidian-chord-sheets): works as is. Its `chords` code blocks, `[Verse]`-style section headers and `%c`/`%t` line markers are what Songbook Maker reads. If you changed Chord Sheets' block name, set the same **Code block name** here.
+- [**Chord Lyrics**](https://github.com/nevernotmove/obsidian-chordlyrics): set **Code block name** to `chordlyrics`.
+
+Any other chords-over-lyrics code block with `[Section]` headers works the same way.
 
 ## Install with BRAT
 
@@ -39,7 +52,7 @@ The plugin isn't in the Community plugins directory yet, so install it with [BRA
 3. Enter `akabanov/obsidian-songbook-maker-plugin` and choose the latest version. Early releases are betas (`0.1.0-beta.N`).
 4. Enable **Songbook Maker** under *Settings → Community plugins*.
 
-BRAT checks for new releases and updates the plugin for you. Songbook Maker runs on desktop only.
+BRAT checks for new releases and updates the plugin for you. Songbook Maker runs on desktop only and needs Obsidian 1.13 or later.
 
 ## Settings
 
@@ -50,18 +63,22 @@ BRAT checks for new releases and updates the plugin for you. Songbook Maker runs
 | Code block name | `chords` |
 | Output file | `~/Documents/my-songbook.epub` (asks before overwriting) |
 | Show in folder after export | off |
-| Book title / author / language | My Songbook / Obsidian / EN |
+| Book title / author / language | My Songbook / Obsidian / English |
 | Title split sequence | ` - ` |
 | Cover image | bundled default (or none, or your own image) |
 | Flashcard-style sections | on |
 | Use regular font | on (off: keep chord spacing, in a monospaced font) |
 | Text size | 100% of your reader's font size (65–130%) |
-| Monospace text size | 70% of the text size (50–100%), for tabs |
+| Monospace text size | 70% of the text size (50–100%), for tabs and monospaced songs |
 | Section / song title size | 1.25× content / 1.25× section |
 
-## Privacy
+## Privacy and disclosures
 
-Songbook Maker makes no network requests. The export reads your song notes and writes one file to the path you set.
+- **No network**: Songbook Maker makes no network requests and collects no telemetry.
+- **Files outside your vault**: the export writes the EPUB file to the **Output file** path, which is usually outside your vault (`~/Documents` by default), so that the book doesn't end up synced or indexed as a vault file and is easy to copy to your e-reader. It writes nothing else, apart from a temporary file next to it while the export runs. A **Cover image path** starting with `/` or `~` is read from outside the vault too.
+- **What it reads**: only the notes under **Songs directory**, and only when you run the export.
+
+This is also why the plugin is desktop only: writing outside the vault needs Node's file system access.
 
 ## Reading on a Kobo
 
@@ -81,7 +98,7 @@ npm test        # unit tests (Node's built-in test runner)
 npm run lint
 ```
 
-To try a local build, symlink or copy `main.js` and `manifest.json` into `<vault>/.obsidian/plugins/songbook-maker/`.
+To try a local build, symlink or copy `main.js` and `manifest.json` into `<vault>/.obsidian/plugins/songbook-maker/`. See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
 ## Releasing
 

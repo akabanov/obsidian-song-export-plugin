@@ -1,7 +1,7 @@
 import { App, normalizePath, Notice } from 'obsidian';
 import { DEFAULT_COVER, detectImageType } from '../cover';
 import { BookCover, buildEpub } from '../epub/book';
-import { DEFAULT_SETTINGS, SongbookMakerSettings } from '../settings';
+import { DEFAULT_SETTINGS, SongbookMakerSettings, trimSettings } from '../settings';
 import { confirm } from '../ui/confirm-modal';
 import { errorMessage } from '../utils/errors';
 import { expandHome, isFilesystemPath } from '../utils/paths';
@@ -15,8 +15,9 @@ import { NodeApis, nodeApis } from './node';
  */
 export async function exportSongs(
 	app: App,
-	settings: SongbookMakerSettings,
+	savedSettings: SongbookMakerSettings,
 ): Promise<void> {
+	const settings = trimSettings(savedSettings);
 	let node: NodeApis;
 	let target: string;
 	try {
@@ -51,7 +52,7 @@ export async function exportSongs(
 		}
 		if (songs.length === 0) {
 			throw new Error(
-				`No songs found in ${settings.songsDirectory || 'the vault'}` +
+				`No songs found in ${songsDirectoryName(settings.songsDirectory)}` +
 					(skipped.length > 0 ? ` (${skipped.length} skipped)` : ''),
 			);
 		}
@@ -89,6 +90,10 @@ export async function exportSongs(
 		console.error('Songbook Maker:', error);
 		new Notice(`Songbook export failed: ${errorMessage(error)}`, 10000);
 	}
+}
+
+function songsDirectoryName(directory: string): string {
+	return directory === '' || directory === '/' ? 'the vault' : directory;
 }
 
 function outputPath(node: NodeApis, setting: string): string {
