@@ -90,9 +90,11 @@ describe('preprocessSection', () => {
 		assert.deepEqual(preprocessSection(['A', '%t', 'B']), ['A', '', 'B']);
 	});
 
-	it('drops -- lines', () => {
+	it('keeps -- lines', () => {
 		assert.deepEqual(preprocessSection(['A', '--', ' ----- ', '-', 'B']), [
 			'A',
+			'--',
+			'-----',
 			'-',
 			'B',
 		]);
@@ -127,13 +129,24 @@ describe('preprocessSection', () => {
 		assert.deepEqual(preprocessSection(['a\t\tb']), ['a b']);
 	});
 
+	it('keeps spacing when asked, trimming only line ends', () => {
+		const lines = ['   G    G7  %t', 'Amazing  grace  ', '    ', '  e|-0-  ', '\tC'];
+		assert.deepEqual(preprocessSection(lines, true), [
+			'   G    G7',
+			'Amazing  grace',
+			'',
+			{ tab: ['e|-0-'] },
+			'\tC',
+		]);
+	});
+
 	it('collapses empty-line runs and trims empty lines at the ends', () => {
-		const lines = ['', '  ', 'A', '', '', '   ', 'B', '--', '', 'C', '', ''];
+		const lines = ['', '  ', 'A', '', '', '   ', 'B', '%t', '', 'C', '', ''];
 		assert.deepEqual(preprocessSection(lines), ['A', '', 'B', '', 'C']);
 	});
 
 	it('returns nothing for an empty section', () => {
-		assert.deepEqual(preprocessSection(['', '--', '%t', '  ']), []);
+		assert.deepEqual(preprocessSection(['', '%c', '%t', '  ']), []);
 	});
 });
 
@@ -167,6 +180,14 @@ describe('parseSections', () => {
 });
 
 describe('parseSong', () => {
+	it('keeps spacing when asked', () => {
+		const md = '```chords\n[Verse]\n  G     C\nAmazing grace\n```';
+		assert.deepEqual(parseSong('x', md, 'chords', true), {
+			kind: 'song',
+			song: { title: 'x', sections: [{ name: 'Verse', lines: ['  G     C', 'Amazing grace'] }] },
+		});
+	});
+
 	it('joins chords blocks so a section continues into the next block', () => {
 		const md = [
 			'```chords',
@@ -206,7 +227,7 @@ describe('parseSong', () => {
 
 	it('skips songs without non-empty sections', () => {
 		assert.equal(parseSong('x', '```chords\nno header\n```', 'chords').kind, 'skipped');
-		assert.equal(parseSong('x', '```chords\n[Verse]\n--\n```', 'chords').kind, 'skipped');
+		assert.equal(parseSong('x', '```chords\n[Verse]\n%t\n```', 'chords').kind, 'skipped');
 	});
 });
 

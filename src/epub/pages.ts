@@ -3,7 +3,7 @@ import { ImageSize } from './image-size';
 import { escapeXml } from './xml';
 
 /** Stylesheet paths relative to the XHTML pages in `text/`. */
-const STYLESHEETS = ['../styles/book.css', '../styles/modern.css', '../styles/tab.css'];
+const STYLESHEETS = ['../styles/book.css', '../styles/modern.css', '../styles/mono.css'];
 
 // A fleuron marking song titles: the light swash ornament (U+1F658) from Noto
 // Sans Symbols 2, © Google, SIL Open Font License 1.1.
@@ -65,8 +65,9 @@ function sectionHeading(name: string): string {
 // One <div> per line: unlike <p>, a div has no default margins, and readers
 // that override paragraph spacing (Kobo) leave it alone. Tab blocks are a
 // single <pre>, its lines split by newlines; nothing may follow the opening
-// tag, since XHTML keeps a leading newline that HTML would drop.
-function content(lines: Line[]): string {
+// tag, since XHTML keeps a leading newline that HTML would drop. With
+// `monospace`, the lines are set in the monospace font and keep their spaces.
+function content(lines: Line[], monospace: boolean): string {
 	const rows = lines
 		.map((line) => {
 			if (typeof line === 'object') {
@@ -77,7 +78,7 @@ function content(lines: Line[]): string {
 				: `<div class="line">${escapeXml(line)}</div>`;
 		})
 		.join('\n');
-	return `<div class="content">\n${rows}\n</div>`;
+	return `<div class="${monospace ? 'content mono' : 'content'}">\n${rows}\n</div>`;
 }
 
 /** The song title alone, centered on the page, opening the song's chapter. */
@@ -105,15 +106,21 @@ export function sectionContentPage(
 	language: string,
 	title: string,
 	lines: Line[],
+	monospace: boolean,
 ): string {
-	return page(language, title, 'class="page content-page"', content(lines));
+	return page(language, title, 'class="page content-page"', content(lines, monospace));
 }
 
 /** Sections running together, each title followed by its content. */
-export function runningPage(language: string, title: string, sections: Section[]): string {
+export function runningPage(
+	language: string,
+	title: string,
+	sections: Section[],
+	monospace: boolean,
+): string {
 	const body = sections.map(
 		(section) =>
-			`<div class="section">\n${sectionHeading(section.name)}\n${content(section.lines)}\n</div>`,
+			`<div class="section">\n${sectionHeading(section.name)}\n${content(section.lines, monospace)}\n</div>`,
 	);
 	return page(language, title, 'class="song"', body.join('\n'));
 }

@@ -27,7 +27,7 @@ Click the songbook icon in the left ribbon, or run **Export songs to EPUB**, and
 - 🔖 **Practice with flashcards, or play straight through**: with flashcard-style sections, each section title (`[Verse 1]`, `[Chorus]` …) is the front of a card and its content is on the next page, so you can drill one part at a time. Turn them off for a regular songbook layout.
 - 🖼️ **It has a cover**: a bundled black-and-white illustration, your own image, or none.
 - ✍️ **It reads well on e-ink**: the text uses your reader's font, sized relative to your other books (say, 80% to fit long lines), titles are sized by multipliers you choose, and everything follows your reader's font-size setting. The book works with Kobo's stricter EPUB renderer too.
-- 🎼 **Chords sit on their own line, not above a syllable**: in Obsidian a code block uses a monospaced font, where every letter is the same width, so spaces can line a chord up with its word. Your reader's font isn't monospaced, so those spaces wouldn't line up anyway; the book drops them on purpose, and each chord line shows just the chords, in order, above its lyric line.
+- 🎼 **Chords sit on their own line, not above a syllable**: in Obsidian a code block uses a monospaced font, where every letter is the same width, so spaces can line a chord up with its word. Your reader's font isn't monospaced, so those spaces wouldn't line up anyway; the book drops them on purpose, and each chord line shows just the chords, in order, above its lyric line. Prefer chords over their syllables? Turn off **Use regular font**: songs keep their spacing, in a monospaced font embedded in the book.
 - 🗂️ **The table of contents stays short**: songs only, in alphabetical order.
 
 ## Install with BRAT
@@ -46,6 +46,7 @@ BRAT checks for new releases and updates the plugin for you. Songbook Maker runs
 | Setting | Default |
 |---|---|
 | Songs directory | vault root |
+| Excluded tags | `template` |
 | Code block name | `chords` |
 | Output file | `~/Documents/my-songbook.epub` (asks before overwriting) |
 | Show in folder after export | off |
@@ -53,7 +54,9 @@ BRAT checks for new releases and updates the plugin for you. Songbook Maker runs
 | Title split sequence | ` - ` |
 | Cover image | bundled default (or none, or your own image) |
 | Flashcard-style sections | on |
+| Use regular font | on (off: keep chord spacing, in a monospaced font) |
 | Text size | 100% of your reader's font size (65–130%) |
+| Monospace text size | 70% of the text size (50–100%), for tabs |
 | Section / song title size | 1.25× content / 1.25× section |
 
 ## Privacy
@@ -133,4 +136,4 @@ The tag must match the `version` in `manifest.json`, or the workflow fails.
 
 [0BSD](LICENSE)
 
-Books embed a subset of [Noto Sans Mono](https://fonts.google.com/noto/specimen/Noto+Sans+Mono) for guitar tabs (`assets/tab-mono.ttf`), © Google, licensed under the [SIL Open Font License 1.1](https://openfontlicense.org).
+Books embed a subset of [Noto Sans Mono](https://fonts.google.com/noto/specimen/Noto+Sans+Mono) for tabs and monospaced songs (`assets/mono.ttf`), © Google, licensed under the [SIL Open Font License 1.1](https://openfontlicense.org).

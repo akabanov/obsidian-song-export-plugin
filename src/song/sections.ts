@@ -13,7 +13,6 @@ export interface Section {
 
 const SECTION_HEADER = /^\s*\[([^[\]]+)\]\s*$/;
 const LINE_END_HINTS = /(^|\s+)(%[A-Za-z]\s*)+$/;
-const DASH_LINE = /^-{2,}$/;
 const TAB_LINE = /^[A-Ga-g][#b]?\|/;
 
 /**
@@ -28,8 +27,9 @@ export function parseSectionHeader(line: string): string | null {
 /**
  * Splits song content into sections and pre-processes each one. Text before
  * the first section header is discarded, and so are sections left empty.
+ * With `keepSpacing`, lines keep their leading and inner whitespace.
  */
-export function parseSections(content: string): Section[] {
+export function parseSections(content: string, keepSpacing = false): Section[] {
 	const sections: { name: string; lines: string[] }[] = [];
 	let current: { name: string; lines: string[] } | null = null;
 	for (const line of content.split(/\r\n|\r|\n/)) {
@@ -44,24 +44,29 @@ export function parseSections(content: string): Section[] {
 	return sections
 		.map((section) => ({
 			name: section.name,
-			lines: preprocessSection(section.lines),
+			lines: preprocessSection(section.lines, keepSpacing),
 		}))
 		.filter((section) => section.lines.length > 0);
 }
 
-/** Applies the section pre-processing steps from SPEC.md, in order. */
-export function preprocessSection(lines: string[]): Line[] {
+/**
+ * Applies the section pre-processing steps from SPEC.md, in order. With
+ * `keepSpacing`, lines are only trimmed at the end and whitespace isn't
+ * collapsed, so chords stay over their syllables in a monospace font.
+ */
+export function preprocessSection(lines: string[], keepSpacing = false): Line[] {
 	const kept: Line[] = [];
 	for (const raw of lines) {
-		const line = raw.trim().replace(LINE_END_HINTS, '');
-		if (DASH_LINE.test(line)) continue;
-		if (TAB_LINE.test(line)) {
+		const line = (keepSpacing ? raw.trimEnd() : raw.trim()).replace(LINE_END_HINTS, '');
+		const trimmed = line.trim();
+		if (TAB_LINE.test(trimmed)) {
 			const previous = kept[kept.length - 1];
-			if (typeof previous === 'object') previous.tab.push(line);
-			else kept.push({ tab: [line] });
+			if (typeof previous === 'object') previous.tab.push(trimmed);
+			else kept.push({ tab: [trimmed] });
 			continue;
 		}
-		kept.push(line.replace(/\s+/g, ' '));
+		if (trimmed === '') kept.push('');
+		else kept.push(keepSpacing ? line : line.replace(/\s+/g, ' '));
 	}
 
 	const result: Line[] = [];

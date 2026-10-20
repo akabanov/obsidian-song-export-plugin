@@ -3,6 +3,8 @@ import { SONG_ICON_ASPECT } from './pages';
 export interface StylesheetOptions {
 	/** Percent of the reader's font size; every size below is in em of it. */
 	textSize: number;
+	/** Percent of the content text size, for monospace text. */
+	monoTextSize: number;
 	sectionTitleScale: number;
 	songTitleScale: number;
 }
@@ -44,6 +46,7 @@ export function bookStylesheet(options: StylesheetOptions): string {
 	// One title line (its font size × line-height 1.2), matching the empty
 	// line between the two title lines on a song title page.
 	const iconGap = round(songScale(options) * 1.2);
+	const monoSize = round(options.monoTextSize / 100);
 
 	return `html, body {
 	margin: 0;
@@ -104,16 +107,26 @@ h1, h2 {
 	hyphens: none;
 }
 
+/* Monospace text: tabs, and all song content with the regular font off.
+   mono.css sets the embedded monospace font. */
+.tab, .mono .line {
+	font-family: monospace;
+	font-size: ${monoSize}em;
+}
+
 /* Guitar tabs: one block, lines set solid so the staff reads as a whole. Long
-   lines aren't wrapped. tab.css sets the embedded monospace font. */
+   lines aren't wrapped. */
 .tab {
 	margin: 0;
 	padding: 0;
 	text-indent: 0;
-	font-family: monospace;
-	font-size: 0.8em;
 	line-height: 1.2;
 	white-space: pre;
+}
+
+/* Spaces line chords up over their syllables; long lines still wrap. */
+.mono .line {
+	white-space: pre-wrap;
 }
 
 /* Sections running together: each song starts on a new page. */
@@ -166,17 +179,17 @@ function round(value: number): string {
 	return String(Math.round(value * 1000) / 1000);
 }
 
-/* The embedded monospace font for tabs, in a file of its own so that a reader
-   failing on @font-face drops only this file. Kobo has no monospace font of
-   its own; !important keeps a font chosen in the reader from replacing it. */
-export const TAB_STYLESHEET = `@font-face {
+/* The embedded monospace font, in a file of its own so that a reader failing
+   on @font-face drops only this file. Kobo has no monospace font of its own;
+   !important keeps a font chosen in the reader from replacing it. */
+export const MONO_STYLESHEET = `@font-face {
 	font-family: "Songbook Mono";
 	font-style: normal;
 	font-weight: normal;
-	src: url(../fonts/tab-mono.ttf);
+	src: url(../fonts/mono.ttf);
 }
 
-.tab {
+.tab, .mono .line {
 	font-family: "Songbook Mono", monospace !important;
 }
 `;

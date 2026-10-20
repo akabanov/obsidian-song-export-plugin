@@ -27,6 +27,7 @@ Starting an export while one is running does nothing.
 | Setting | Default | Notes |
 |---|---|---|
 | Songs directory | empty (vault root) | Vault-relative path, searched recursively. |
+| Excluded tags | `template` | Notes with any of these tags are left out. See [Discovering the songs](#discovering-the-songs). |
 | Code block name | `chords` | Info string of the code blocks that hold song content. Empty means the default. |
 | Output file | `~/Documents/my-songbook.epub` | Absolute path; a leading `~` expands to the user's home directory. Missing parent directories are created. A relative path fails the export with an error notice. |
 | Show in folder after export | Off | Toggle. After a successful export, opens the system file manager (Finder, Explorer, …) with the EPUB selected, through Electron's `shell.showItemInFolder`. If that fails, a warning goes to the developer console; the export still counts as successful. |
@@ -38,6 +39,9 @@ Starting an export while one is running does nothing.
 | Cover image path | empty | Shown only for *Custom image*. JPEG, PNG or WebP, detected from the file contents. A path starting with `/` or `~` is a filesystem path; anything else is relative to the vault root. |
 | Song title on its own page | On | Toggle. See [Page layout](#page-layout). |
 | Section title on its own page | On | Toggle. See [Page layout](#page-layout). |
+| Use regular font | On | Toggle. On: song content uses the reader's font, with whitespace collapsed. Off: it keeps its spacing, in the embedded monospace font. See [Section pre-processing](#section-pre-processing) and [Typography](#typography). |
+| Text size | `100` | Percent of the reader's font size. Slider from 65 to 130 in steps of 5. |
+| Monospace text size | `70` | Percent of the content text size, for monospace text: tab blocks, and all song content with *Use regular font* off. Slider from 50 to 100 in steps of 5. |
 | Section title size | `1.25` | Multiplier of the content text size. Slider from 1 to 3 in steps of 0.25. |
 | Song title size | `1.25` | Multiplier of the **section title** size (so about 1.56× content by default). Chaining sizes like this is the usual modular type scale. Slider from 1 to 3 in steps of 0.25. Saved values above 3 (allowed up to 0.1.0-beta.3) are lowered to 3 on load. |
 
@@ -85,6 +89,8 @@ Fences follow CommonMark: the info string matches when its first word equals the
 
 If the songs directory doesn't exist, the export fails with an error notice.
 
+Notes with an excluded tag are left out before they are read, and aren't reported as skipped. *Excluded tags* is split at commas and whitespace; a leading `#` is optional. Tags come from both the note's frontmatter and its body, as Obsidian's metadata cache lists them. Matching ignores case, as Obsidian does, and covers nested tags: `template` also excludes `#template/song`, but not `#templates`. An empty setting excludes nothing.
+
 Code blocks of other types (`metronome`, `alphatex`, …) and all text outside `chords` blocks are ignored.
 
 ## Songs
@@ -116,20 +122,21 @@ Text before the first section header is discarded.
 
 These steps run in order on each line of a section's body:
 
-1. Trim the line.
+1. Trim the line. With *Use regular font* off, trim only its end.
 2. Strip line-end hints: remove one or more trailing `%` + letter tokens (e.g. `%t`, `%c`) together with the whitespace before them, matching `(^|\s+)(%[A-Za-z]\s*)+$`. These are rendering hints for the Obsidian plugin that displays `chords` blocks. For example, `|b7 6m| |5 4| %t` becomes `|b7 6m| |5 4|`.
-3. Drop `--` lines: lines that consist only of two or more `-` characters.
-4. Group tab lines: lines that start with a string name followed by `|`, matching `^[A-Ga-g][#b]?\|` (e.g. `e|-----`, `B|--3--`, `Eb|---`). Consecutive tab lines form one tab block, kept as they are after steps 1 and 2; step 5 doesn't apply to them. An empty line between tab lines starts a new block.
-5. Collapse each run of whitespace characters into a single space.
+3. Group tab lines: lines that, trimmed, start with a string name followed by `|`, matching `^[A-Ga-g][#b]?\|` (e.g. `e|-----`, `B|--3--`, `Eb|---`). Consecutive tab lines form one tab block, kept trimmed but otherwise as they are; step 4 doesn't apply to them. An empty line between tab lines starts a new block.
+4. Collapse each run of whitespace characters into a single space. Skipped with *Use regular font* off. A line of only whitespace becomes empty either way.
 
 After that:
 
-6. Collapse each run of consecutive empty lines into one empty line.
-7. Remove empty lines at the start and end of the section.
+5. Collapse each run of consecutive empty lines into one empty line.
+6. Remove empty lines at the start and end of the section.
 
-Trimming and collapsing whitespace (steps 1 and 5), together with proportional fonts, means chords no longer line up over the syllables they belong to. This is a deliberate trade-off for readability.
+With *Use regular font* on, trimming and collapsing whitespace (steps 1 and 4), together with the reader's proportional font, means chords no longer line up over the syllables they belong to. This is a deliberate trade-off for readability. With it off, lines keep their spacing and are set in a monospace font, so chords stay over their syllables as in Obsidian.
 
-A line that consists only of hints (e.g. `%t`) becomes an empty line in step 2, and is then handled by steps 6 and 7.
+Lines of dashes such as `--` are regular lines and are kept.
+
+A line that consists only of hints (e.g. `%t`) becomes an empty line in step 2, and is then handled by steps 5 and 6.
 
 If a section is empty after pre-processing, it is not included.
 
@@ -141,7 +148,9 @@ The section title page shows only the section name, centered both vertically and
 
 The section content shows the pre-processed lines in order. Each line is its own `<div>`, and empty lines are kept as vertical gaps (a `<div>` holding a no-break space). `<div>` rather than `<p>`, because a `<div>` has no default margins and readers that override paragraph spacing (Kobo) leave it alone, so lines don't get blank lines between them. Long lines wrap; hyphenation is turned off. All text is HTML-escaped.
 
-A tab block is a single `<pre class="tab">`, its lines separated by newlines, in an embedded monospace font at 0.8em (80% of the content text), with line-height 1.2 and no margins, so the staff lines sit close together and the columns line up. Nothing follows the opening tag before the first line: XHTML, parsed as XML, keeps a leading newline that HTML would drop. Tab lines don't wrap.
+A tab block is a single `<pre class="tab">`, its lines separated by newlines, in the embedded monospace font at the *Monospace text size* (`0.7em` by default), with line-height 1.2 and no margins, so the staff lines sit close together and the columns line up. Nothing follows the opening tag before the first line: XHTML, parsed as XML, keeps a leading newline that HTML would drop. Tab lines don't wrap.
+
+With *Use regular font* off, the content block has the classes `content mono`: its lines are set in the monospace font at the *Monospace text size*, with `white-space: pre-wrap`, so spaces are kept and long lines still wrap.
 
 On a page of its own, the content block is centered vertically; the lines inside it stay left-aligned.
 
@@ -154,18 +163,19 @@ Title pages and section content pages are centered vertically the same way. Each
 
 ## Typography
 
-The book sets no font family, except the monospace font of tab blocks, so the text uses the reader's font setting.
+The book sets no font family, except the monospace font of tab blocks (and of all song content with *Use regular font* off), so the text uses the reader's font setting. Song and section titles are bold.
 
-Tab blocks use a font embedded in the book, because Kobo offers no monospace font of its own: a subset of Noto Sans Mono Regular (© Google, SIL Open Font License 1.1, whose notice stays in the font's name table) with Basic Latin, Latin-1, typographic quotes and dashes, and the ♭ ♮ ♯ signs, without hinting (about 18 KB). It is `fonts/tab-mono.ttf`, with the media type `application/vnd.ms-opentype`, an EPUB 3 core type that RMSDK also recognizes. Song and section titles are bold.
+Monospace text uses a font embedded in the book, because Kobo offers no monospace font of its own: a subset of Noto Sans Mono Regular (© Google, SIL Open Font License 1.1, whose notice stays in the font's name table) with Basic Latin, Latin-1, typographic quotes and dashes, and the ♭ ♮ ♯ signs, without hinting (about 18 KB). It is `fonts/mono.ttf`, with the media type `application/vnd.ms-opentype`, an EPUB 3 core type that RMSDK also recognizes.
 
 The styles are split into three stylesheets, linked from every page in this order:
 
 - `styles/book.css` uses only CSS 2.1 (plus the `hyphens` properties), with no `calc()`, `vh`, flexbox, custom properties or `@font-face`. Kobo renders sideloaded EPUBs with Adobe RMSDK, which drops a whole stylesheet when it meets one value it can't parse, so this file must parse there.
 - `styles/modern.css` holds the [vertical centering](#vertical-centering) and overrides the values in `book.css` that are tuned for RMSDK (the title page's top padding, the fleuron's size and gap). Its `calc()` is deliberate: RMSDK skips the whole file, rather than applying part of it, and keeps the values from `book.css`.
-- `styles/tab.css` declares the embedded font with `@font-face` and applies it to tab blocks, with `!important` so that a font chosen in the reader doesn't replace it. It is a file of its own so that a reader failing on `@font-face` drops only this file; `book.css` then falls back to the generic `monospace`.
+- `styles/mono.css` declares the embedded font with `@font-face` and applies it to monospace text, with `!important` so that a font chosen in the reader doesn't replace it. It is a file of its own so that a reader failing on `@font-face` drops only this file; `book.css` then falls back to the generic `monospace`.
 
 All sizes are in `em`, relative to the reader's base font size, so the reader's font-size control still scales everything:
 
 - Content: `1em`, regular.
+- Monospace text: content size × *Monospace text size* (default `0.7em`).
 - Section title: bold, content size × section title multiplier (default `1.25em`).
 - Song title: bold, section title size × song title multiplier (default `1.5625em`).

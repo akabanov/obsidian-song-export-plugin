@@ -5,6 +5,7 @@ import { DEFAULT_SETTINGS, SongbookMakerSettings } from '../settings';
 import { confirm } from '../ui/confirm-modal';
 import { errorMessage } from '../utils/errors';
 import { expandHome, isFilesystemPath } from '../utils/paths';
+import { parseTagList } from '../utils/tags';
 import { collectSongs } from './collect';
 import { NodeApis, nodeApis } from './node';
 
@@ -38,12 +39,13 @@ export async function exportSongs(
 
 	const progress = new Notice('Exporting songs…', 0);
 	try {
-		const { songs, skipped } = await collectSongs(
-			app.vault,
-			settings.songsDirectory,
-			settings.codeBlockName || DEFAULT_SETTINGS.codeBlockName,
-			settings.titleSplitSequence,
-		);
+		const { songs, skipped } = await collectSongs(app, {
+			directory: settings.songsDirectory,
+			blockName: settings.codeBlockName || DEFAULT_SETTINGS.codeBlockName,
+			titleSplitSequence: settings.titleSplitSequence,
+			excludedTags: parseTagList(settings.excludedTags),
+			keepSpacing: !settings.regularFont,
+		});
 		for (const song of skipped) {
 			console.warn(`Songbook Maker: skipped ${song.path}: ${song.reason}`);
 		}
@@ -63,8 +65,10 @@ export async function exportSongs(
 				modified: new Date(),
 				cover: await loadCover(app, node, settings),
 				sectionTitleOwnPage: settings.sectionTitleOwnPage,
+				monospace: !settings.regularFont,
 				songs,
 				textSize: settings.textSize,
+				monoTextSize: settings.monoTextSize,
 				sectionTitleScale: settings.sectionTitleScale,
 				songTitleScale: settings.songTitleScale,
 			},

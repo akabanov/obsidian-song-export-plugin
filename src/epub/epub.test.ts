@@ -60,6 +60,7 @@ const BOOK: Book = {
 	modified: new Date('2026-10-17T12:34:56.789Z'),
 	cover: { bytes: new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]), mediaType: 'image/jpeg' },
 	sectionTitleOwnPage: true,
+	monospace: false,
 	songs: [
 		{
 			title: 'Armstrong - What a Wonderful World',
@@ -76,6 +77,7 @@ const BOOK: Book = {
 		},
 	],
 	textSize: 80,
+	monoTextSize: 70,
 	sectionTitleScale: 2,
 	songTitleScale: 1.5,
 };
@@ -212,12 +214,12 @@ describe('buildEpub', () => {
 	});
 
 	it('embeds the monospace font for tabs in a stylesheet of its own', () => {
-		assert.match(opf, /<item id="font-tab" href="fonts\/tab-mono.ttf" media-type="application\/vnd.ms-opentype"\/>/);
-		const font = entries.find((entry) => entry.path === 'OEBPS/fonts/tab-mono.ttf');
+		assert.match(opf, /<item id="font-mono" href="fonts\/mono.ttf" media-type="application\/vnd.ms-opentype"\/>/);
+		const font = entries.find((entry) => entry.path === 'OEBPS/fonts/mono.ttf');
 		assert.deepEqual([...(font?.data.slice(0, 4) ?? [])], [0, 1, 0, 0]);
-		const css = textOf(entries, 'OEBPS/styles/tab.css');
-		assert.match(css, /src: url\(..\/fonts\/tab-mono.ttf\);/);
-		assert.match(css, /font-family: "Songbook Mono", monospace !important;/);
+		const css = textOf(entries, 'OEBPS/styles/mono.css');
+		assert.match(css, /src: url\(..\/fonts\/mono.ttf\);/);
+		assert.match(css, /\.tab, \.mono \.line \{\n\tfont-family: "Songbook Mono", monospace !important;/);
 	});
 
 	it('sizes titles from the multipliers in a stylesheet Adobe RMSDK can parse', () => {
@@ -226,15 +228,16 @@ describe('buildEpub', () => {
 		assert.match(css, /\.song-title \{\n\tfont-size: 3em;/);
 		assert.match(css, /\.section-title \{\n\tfont-size: 2em;/);
 		assert.doesNotMatch(css, /calc\(|vh\b|flex|@font-face/);
-		// Only tab blocks set a font family.
+		// Only monospace text sets a font family, at the monospace size.
 		assert.deepEqual(css.match(/font-family/g), ['font-family']);
+		assert.match(css, /\.tab, \.mono \.line \{\n\tfont-family: monospace;\n\tfont-size: 0.7em;/);
 		assert.match(css, /\.icon \{\n\tmargin: 0 0 3.6em;/);
 		const modern = textOf(entries, 'OEBPS/styles/modern.css');
 		assert.match(modern, /min-height: calc\(100vh - 2em\)/);
 		assert.match(modern, /\.song-icon \{\n\twidth: 5.76em;\n\theight: 3.965em;/);
 		assert.match(opf, /<item id="css-modern" href="styles\/modern.css" media-type="text\/css"\/>/);
 		const page = textOf(entries, 'OEBPS/text/song-001-01.xhtml');
-		assert.match(page, /href="..\/styles\/book.css"\/>\n<link rel="stylesheet" type="text\/css" href="..\/styles\/modern.css"\/>\n<link rel="stylesheet" type="text\/css" href="..\/styles\/tab.css"\/>/);
+		assert.match(page, /href="..\/styles\/book.css"\/>\n<link rel="stylesheet" type="text\/css" href="..\/styles\/modern.css"\/>\n<link rel="stylesheet" type="text\/css" href="..\/styles\/mono.css"\/>/);
 	});
 
 	it('falls back to an <img> cover when the image size is unknown', () => {
@@ -270,6 +273,13 @@ describe('buildEpub with sections running together', () => {
 		const content = textOf(entries, 'OEBPS/text/song-001-content.xhtml');
 		assert.match(content, /<body class="song">\n<div class="section">\n<h2 class="section-title">Verse 1<\/h2>\n<div class="content">\n<div class="line">C Em<\/div>/);
 		assert.match(content, /<h2 class="section-title">Chorus<\/h2>\n<div class="content">\n<div class="line">G<\/div>/);
+	});
+
+	it('marks content as monospace when the regular font is off', () => {
+		const mono = readZip(buildEpub({ ...book, monospace: true }, deflate));
+		const content = textOf(mono, 'OEBPS/text/song-001-content.xhtml');
+		assert.match(content, /<h2 class="section-title">Verse 1<\/h2>\n<div class="content mono">\n/);
+		assert.match(textOf(mono, 'OEBPS/styles/book.css'), /\.mono \.line \{\n\twhite-space: pre-wrap;/);
 	});
 
 	it('keeps the table of contents pointing at the songs', () => {

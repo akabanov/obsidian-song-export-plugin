@@ -1,6 +1,7 @@
-import { normalizePath, TFile, TFolder, Vault } from 'obsidian';
+import { App, getAllTags, normalizePath, TFile, TFolder } from 'obsidian';
 import { BookSong } from '../epub/book';
 import { compareSongTitles, parseSong, splitTitle } from '../song/song';
+import { hasExcludedTag } from '../utils/tags';
 
 export interface SkippedSong {
 	path: string;
@@ -12,16 +13,23 @@ export interface CollectedSongs {
 	skipped: SkippedSong[];
 }
 
+export interface CollectOptions {
+	directory: string;
+	blockName: string;
+	titleSplitSequence: string;
+	/** Notes with one of these tags, or a tag nested under one, are left out. */
+	excludedTags: string[];
+	/** Keep the whitespace in song lines, for a monospace font. */
+	keepSpacing: boolean;
+}
+
 /**
- * Reads every song note under `directory` (recursively), in title order.
+ * Reads every song note under `options.directory` (recursively), in title
+ * order.
  */
-export async function collectSongs(
-	vault: Vault,
-	directory: string,
-	blockName: string,
-	titleSplitSequence: string,
-): Promise<CollectedSongs> {
-	const root = normalizePath(directory || '/');
+export async function collectSongs(app: App, options: CollectOptions): Promise<CollectedSongs> {
+	const { vault, metadataCache } = app;
+	const root = normalizePath(options.directory || '/');
 	let files: TFile[];
 	if (root === '/') {
 		files = vault.getMarkdownFiles();
@@ -35,13 +43,22 @@ export async function collectSongs(
 	const songs: BookSong[] = [];
 	const skipped: SkippedSong[] = [];
 	for (const file of files) {
-		const result = parseSong(file.basename, await vault.cachedRead(file), blockName);
+		const cache = metadataCache.getFileCache(file);
+		const tags = cache ? (getAllTags(cache) ?? []) : [];
+		if (hasExcludedTag(tags, options.excludedTags)) continue;
+
+		const result = parseSong(
+			file.basename,
+			await vault.cachedRead(file),
+			options.blockName,
+			options.keepSpacing,
+		);
 		if (result.kind === 'skipped') {
 			skipped.push({ path: file.path, reason: result.reason });
 		} else if (result.kind === 'song') {
 			songs.push({
 				...result.song,
-				titleLines: splitTitle(result.song.title, titleSplitSequence),
+				titleLines: splitTitle(result.song.title, options.titleSplitSequence),
 			});
 		}
 	}

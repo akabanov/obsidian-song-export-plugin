@@ -1,4 +1,4 @@
-import tabFont from '../../assets/tab-mono.ttf';
+import monoFont from '../../assets/mono.ttf';
 import { Section } from '../song/sections';
 import { imageSize } from './image-size';
 import {
@@ -16,7 +16,7 @@ import {
 	sectionTitlePage,
 	songTitlePage,
 } from './pages';
-import { bookStylesheet, modernStylesheet, songIconWidth, TAB_STYLESHEET } from './stylesheet';
+import { bookStylesheet, MONO_STYLESHEET, modernStylesheet, songIconWidth } from './stylesheet';
 import { createZip, Deflate, ZipEntry } from './zip';
 
 export interface BookSong {
@@ -41,9 +41,13 @@ export interface Book {
 	cover: BookCover | null;
 	/** Each song title gets a page; this gives each section title one too. */
 	sectionTitleOwnPage: boolean;
+	/** All song content in the monospace font, not only tabs. */
+	monospace: boolean;
 	songs: BookSong[];
 	/** Percent of the reader's font size. */
 	textSize: number;
+	/** Percent of the content text size, for monospace text. */
+	monoTextSize: number;
 	sectionTitleScale: number;
 	songTitleScale: number;
 }
@@ -77,10 +81,10 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 	manifest.push({ id: 'ncx', href: 'toc.ncx', mediaType: 'application/x-dtbncx+xml' });
 	manifest.push({ id: 'css', href: 'styles/book.css', mediaType: 'text/css' });
 	manifest.push({ id: 'css-modern', href: 'styles/modern.css', mediaType: 'text/css' });
-	manifest.push({ id: 'css-tab', href: 'styles/tab.css', mediaType: 'text/css' });
+	manifest.push({ id: 'css-mono', href: 'styles/mono.css', mediaType: 'text/css' });
 	// An EPUB 3 core media type that Adobe RMSDK (Kobo) also recognizes.
-	manifest.push({ id: 'font-tab', href: 'fonts/tab-mono.ttf', mediaType: 'application/vnd.ms-opentype' });
-	files.push({ path: 'OEBPS/fonts/tab-mono.ttf', data: tabFont });
+	manifest.push({ id: 'font-mono', href: 'fonts/mono.ttf', mediaType: 'application/vnd.ms-opentype' });
+	files.push({ path: 'OEBPS/fonts/mono.ttf', data: monoFont });
 
 	let coverImageId: string | null = null;
 	if (book.cover) {
@@ -104,6 +108,7 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 
 	const styles = {
 		textSize: book.textSize,
+		monoTextSize: book.monoTextSize,
 		sectionTitleScale: book.sectionTitleScale,
 		songTitleScale: book.songTitleScale,
 	};
@@ -124,7 +129,7 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 			addPage(
 				`${songId}-content`,
 				`text/${songId}-content.xhtml`,
-				runningPage(lang, song.title, song.sections),
+				runningPage(lang, song.title, song.sections, book.monospace),
 			);
 			return;
 		}
@@ -140,14 +145,14 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 			addPage(
 				`${sectionId}-content`,
 				`text/${sectionId}-content.xhtml`,
-				sectionContentPage(lang, title, section.lines),
+				sectionContentPage(lang, title, section.lines, book.monospace),
 			);
 		});
 	});
 
 	addText('styles/book.css', bookStylesheet(styles));
 	addText('styles/modern.css', modernStylesheet(styles));
-	addText('styles/tab.css', TAB_STYLESHEET);
+	addText('styles/mono.css', MONO_STYLESHEET);
 	addText('nav.xhtml', navDocument(lang, book.title, toc));
 	addText('toc.ncx', ncxDocument(book.id, book.title, toc));
 	addText(

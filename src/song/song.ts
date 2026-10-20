@@ -13,17 +13,19 @@ export type ParseResult =
 
 /**
  * Parses a note into a song. Notes without a code block named `blockName`
- * aren't songs; songs with no non-empty sections are skipped.
+ * aren't songs; songs with no non-empty sections are skipped. With
+ * `keepSpacing`, lines keep their whitespace (see `parseSections`).
  */
 export function parseSong(
 	title: string,
 	markdown: string,
 	blockName: string,
+	keepSpacing = false,
 ): ParseResult {
 	const blocks = extractCodeBlocks(markdown, blockName);
 	if (blocks.length === 0) return { kind: 'not-a-song' };
 
-	const sections = parseSections(blocks.join('\n'));
+	const sections = parseSections(blocks.join('\n'), keepSpacing);
 	if (sections.length === 0) {
 		return {
 			kind: 'skipped',
