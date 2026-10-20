@@ -1,4 +1,4 @@
-import { Section } from '../song/sections';
+import { Line, Section } from '../song/sections';
 import { ImageSize } from './image-size';
 import { escapeXml } from './xml';
 
@@ -63,14 +63,19 @@ function sectionHeading(name: string): string {
 }
 
 // One <div> per line: unlike <p>, a div has no default margins, and readers
-// that override paragraph spacing (Kobo) leave it alone.
-function content(lines: string[]): string {
+// that override paragraph spacing (Kobo) leave it alone. Tab blocks are a
+// single <pre>, its lines split by newlines; nothing may follow the opening
+// tag, since XHTML keeps a leading newline that HTML would drop.
+function content(lines: Line[]): string {
 	const rows = lines
-		.map((line) =>
-			line === ''
+		.map((line) => {
+			if (typeof line === 'object') {
+				return `<pre class="tab">${line.tab.map(escapeXml).join('\n')}</pre>`;
+			}
+			return line === ''
 				? '<div class="line gap">&#160;</div>'
-				: `<div class="line">${escapeXml(line)}</div>`,
-		)
+				: `<div class="line">${escapeXml(line)}</div>`;
+		})
 		.join('\n');
 	return `<div class="content">\n${rows}\n</div>`;
 }
@@ -99,7 +104,7 @@ export function sectionTitlePage(language: string, title: string, name: string):
 export function sectionContentPage(
 	language: string,
 	title: string,
-	lines: string[],
+	lines: Line[],
 ): string {
 	return page(language, title, 'class="page content-page"', content(lines));
 }

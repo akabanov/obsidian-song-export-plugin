@@ -1,6 +1,14 @@
+/** Consecutive tab lines, kept verbatim to be shown in a monospace font. */
+export interface TabBlock {
+	tab: string[];
+}
+
+/** A text line, empty for a gap, or a block of tab lines. */
+export type Line = string | TabBlock;
+
 export interface Section {
 	name: string;
-	lines: string[];
+	lines: Line[];
 }
 
 const SECTION_HEADER = /^\s*\[([^[\]]+)\]\s*$/;
@@ -22,8 +30,8 @@ export function parseSectionHeader(line: string): string | null {
  * the first section header is discarded, and so are sections left empty.
  */
 export function parseSections(content: string): Section[] {
-	const sections: Section[] = [];
-	let current: Section | null = null;
+	const sections: { name: string; lines: string[] }[] = [];
+	let current: { name: string; lines: string[] } | null = null;
 	for (const line of content.split(/\r\n|\r|\n/)) {
 		const name = parseSectionHeader(line);
 		if (name !== null) {
@@ -42,15 +50,21 @@ export function parseSections(content: string): Section[] {
 }
 
 /** Applies the section pre-processing steps from SPEC.md, in order. */
-export function preprocessSection(lines: string[]): string[] {
-	const kept: string[] = [];
+export function preprocessSection(lines: string[]): Line[] {
+	const kept: Line[] = [];
 	for (const raw of lines) {
 		const line = raw.trim().replace(LINE_END_HINTS, '');
-		if (DASH_LINE.test(line) || TAB_LINE.test(line)) continue;
+		if (DASH_LINE.test(line)) continue;
+		if (TAB_LINE.test(line)) {
+			const previous = kept[kept.length - 1];
+			if (typeof previous === 'object') previous.tab.push(line);
+			else kept.push({ tab: [line] });
+			continue;
+		}
 		kept.push(line.replace(/\s+/g, ' '));
 	}
 
-	const result: string[] = [];
+	const result: Line[] = [];
 	for (const line of kept) {
 		const isGap = line === '';
 		if (isGap && (result.length === 0 || result[result.length - 1] === '')) {

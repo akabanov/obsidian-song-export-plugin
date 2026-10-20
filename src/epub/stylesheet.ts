@@ -104,6 +104,17 @@ h1, h2 {
 	hyphens: none;
 }
 
+/* Guitar tabs: one block, lines set solid so the staff reads as a whole. Long
+   lines aren't wrapped. */
+.tab {
+	margin: 0;
+	padding: 0;
+	text-indent: 0;
+	font-family: "Courier New", Courier, monospace;
+	line-height: 1.2;
+	white-space: pre;
+}
+
 /* Sections running together: each song starts on a new page. */
 .song {
 	padding: 1em;

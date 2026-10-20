@@ -119,7 +119,7 @@ These steps run in order on each line of a section's body:
 1. Trim the line.
 2. Strip line-end hints: remove one or more trailing `%` + letter tokens (e.g. `%t`, `%c`) together with the whitespace before them, matching `(^|\s+)(%[A-Za-z]\s*)+$`. These are rendering hints for the Obsidian plugin that displays `chords` blocks. For example, `|b7 6m| |5 4| %t` becomes `|b7 6m| |5 4|`.
 3. Drop `--` lines: lines that consist only of two or more `-` characters.
-4. Drop tab lines: lines that start with a string name followed by `|`, matching `^[A-Ga-g][#b]?\|` (e.g. `e|-----`, `B|--3--`, `Eb|---`).
+4. Group tab lines: lines that start with a string name followed by `|`, matching `^[A-Ga-g][#b]?\|` (e.g. `e|-----`, `B|--3--`, `Eb|---`). Consecutive tab lines form one tab block, kept as they are after steps 1 and 2; step 5 doesn't apply to them. An empty line between tab lines starts a new block.
 5. Collapse each run of whitespace characters into a single space.
 
 After that:
@@ -141,6 +141,8 @@ The section title page shows only the section name, centered both vertically and
 
 The section content shows the pre-processed lines in order. Each line is its own `<div>`, and empty lines are kept as vertical gaps (a `<div>` holding a no-break space). `<div>` rather than `<p>`, because a `<div>` has no default margins and readers that override paragraph spacing (Kobo) leave it alone, so lines don't get blank lines between them. Long lines wrap; hyphenation is turned off. All text is HTML-escaped.
 
+A tab block is a single `<pre class="tab">`, its lines separated by newlines, in a monospace font (`"Courier New", Courier, monospace`) with line-height 1.2 and no margins, so the staff lines sit close together and the columns line up. Nothing follows the opening tag before the first line: XHTML, parsed as XML, keeps a leading newline that HTML would drop. Tab lines don't wrap.
+
 On a page of its own, the content block is centered vertically; the lines inside it stay left-aligned.
 
 ### Vertical centering
@@ -152,7 +154,7 @@ Title pages and section content pages are centered vertically the same way. Each
 
 ## Typography
 
-The book sets no font family, so the text uses the reader's font setting. Song and section titles are bold.
+The book sets no font family, except the monospace font of tab blocks, so the text uses the reader's font setting. Song and section titles are bold.
 
 The styles are split into two stylesheets, linked from every page in this order:
 

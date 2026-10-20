@@ -98,13 +98,26 @@ describe('preprocessSection', () => {
 		]);
 	});
 
-	it('drops tab lines', () => {
-		const lines = ['e|-----', 'B|--3--', 'Eb|---', 'g#|--', 'G C', 'H|--'];
-		assert.deepEqual(preprocessSection(lines), ['G C', 'H|--']);
+	it('groups consecutive tab lines into a block kept verbatim', () => {
+		const lines = ['e|--0  -1-|', ' B|--3--', 'Eb|---', 'g#|--', 'G C', 'H|--', 'e|-'];
+		assert.deepEqual(preprocessSection(lines), [
+			{ tab: ['e|--0  -1-|', 'B|--3--', 'Eb|---', 'g#|--'] },
+			'G C',
+			'H|--',
+			{ tab: ['e|-'] },
+		]);
 	});
 
-	it('drops a tab line after its hint is stripped', () => {
-		assert.deepEqual(preprocessSection(['e|---- %t']), []);
+	it('strips hints from tab lines', () => {
+		assert.deepEqual(preprocessSection(['e|---- %t']), [{ tab: ['e|----'] }]);
+	});
+
+	it('splits tab blocks at empty lines', () => {
+		assert.deepEqual(preprocessSection(['e|-1-', '', 'e|-2-']), [
+			{ tab: ['e|-1-'] },
+			'',
+			{ tab: ['e|-2-'] },
+		]);
 	});
 
 	it('collapses whitespace runs', () => {
@@ -120,7 +133,7 @@ describe('preprocessSection', () => {
 	});
 
 	it('returns nothing for an empty section', () => {
-		assert.deepEqual(preprocessSection(['', '--', 'e|---', '  ']), []);
+		assert.deepEqual(preprocessSection(['', '--', '%t', '  ']), []);
 	});
 });
 
@@ -129,7 +142,7 @@ describe('parseSections', () => {
 		const content = [
 			'Capo 2',
 			'[Intro]',
-			'e|---0---',
+			'%t',
 			'[Verse 1]',
 			'   G              G7       C     G',
 			'Amazing grace! How sweet the sound',

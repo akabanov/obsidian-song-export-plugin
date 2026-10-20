@@ -66,7 +66,7 @@ const BOOK: Book = {
 			titleLines: ['Armstrong', 'What a Wonderful World'],
 			sections: [
 				{ name: 'Verse 1', lines: ['C Em', 'I see trees of green', '', 'F <Em>'] },
-				{ name: 'Chorus', lines: ['G'] },
+				{ name: 'Chorus', lines: ['G', { tab: ['e|-<0>-|', 'B|--1--|'] }] },
 			],
 		},
 		{
@@ -204,12 +204,21 @@ describe('buildEpub', () => {
 		);
 	});
 
+	it('renders a tab block as one escaped pre', () => {
+		assert.match(
+			textOf(entries, 'OEBPS/text/song-001-02-content.xhtml'),
+			/<div class="line">G<\/div>\n<pre class="tab">e\|-&lt;0&gt;-\|\nB\|--1--\|<\/pre>\n<\/div>/,
+		);
+	});
+
 	it('sizes titles from the multipliers in a stylesheet Adobe RMSDK can parse', () => {
 		const css = textOf(entries, 'OEBPS/styles/book.css');
 		assert.match(css, /body \{\n\tfont-size: 80%;/);
 		assert.match(css, /\.song-title \{\n\tfont-size: 3em;/);
 		assert.match(css, /\.section-title \{\n\tfont-size: 2em;/);
-		assert.doesNotMatch(css, /calc\(|vh\b|flex|font-family|@font-face/);
+		assert.doesNotMatch(css, /calc\(|vh\b|flex|@font-face/);
+		// Only tab blocks set a font family.
+		assert.deepEqual(css.match(/font-family/g), ['font-family']);
 		assert.match(css, /\.icon \{\n\tmargin: 0 0 3.6em;/);
 		const modern = textOf(entries, 'OEBPS/styles/modern.css');
 		assert.match(modern, /min-height: calc\(100vh - 2em\)/);
