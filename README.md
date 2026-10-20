@@ -29,7 +29,7 @@ Click the songbook icon in the left ribbon, or run **Export songs to EPUB**, and
 - 🔖 **Practice with flashcards, or play straight through**: with flashcard-style sections, each section title (`[Verse 1]`, `[Chorus]` …) is the front of a card and its content is on the next page, so you can drill one part at a time. Turn them off for a regular songbook layout.
 - 🖼️ **It has a cover**: a bundled black-and-white illustration, your own image, or none.
 - ✍️ **It reads well on e-ink**: the text uses your reader's font, sized relative to your other books (say, 80% to fit long lines), titles are sized by multipliers you choose, and everything follows your reader's font-size setting. The book works with Kobo's stricter EPUB renderer too.
-- 🎼 **Chords sit on their own line, not above a syllable**: in Obsidian a code block uses a monospaced font, where every letter is the same width, so spaces can line a chord up with its word. Your reader's font isn't monospaced, so those spaces wouldn't line up anyway; the book drops them on purpose, and each chord line shows just the chords, in order, above its lyric line. Prefer chords over their syllables? Turn off **Use regular font**: songs keep their spacing, in a monospaced font embedded in the book.
+- 🎼 **You choose how chords line up**: by default, songs use your reader's font, which is easiest to read on a small screen. Its letters vary in width, so spaces can't place a chord over its syllable; the book drops the extra spaces, and each chord line lists the chords in order above its lyric line. To keep every chord exactly where you put it, turn off **Use regular font**: songs keep their spacing, in a monospaced font embedded in the book.
 - 🎸 **Guitar tabs stay readable**: tab lines (`e|---0---|`) are set in a monospaced font embedded in the book, so the strings line up even on readers without a monospaced font of their own.
 - 🗂️ **The table of contents stays short**: songs only, in alphabetical order.
 - 🏷️ **Templates stay out**: notes tagged `#template` (or any tags you choose) are left out of the book.
@@ -82,8 +82,6 @@ This is also why the plugin is desktop only: writing outside the vault needs Nod
 
 ## Reading on a Kobo
 
-Kobo opens sideloaded `.epub` files with its older Adobe renderer, which doesn't support vertical centering. Title pages start about a third of the way down there instead of being centered.
-
 For a sharp cover, use an image at least as large as your screen (for example 1072×1448 on a Clara, 1264×1680 on a Libra). Smaller images are scaled up to fill the page.
 
 If the sleep screen keeps showing the old cover after you change it, the Kobo is holding on to its cached cover. Remove the book from the Kobo, delete the hidden `.kobo-images` folder at its root, power it off completely (not just to sleep), then turn it on and copy the book back. Saving the book under a new file name (**Output file**) also works, without the restart.
@@ -131,7 +129,7 @@ The `version` input takes an explicit version or an `npm version` keyword:
 
 1. Installs dependencies, runs the unit tests and the linter. A failure stops the release before anything is changed.
 2. Bumps the version in `package.json`, `manifest.json` and `versions.json`, commits it to `main` as `Release <version>` and tags it with the bare version (no leading `v`).
-3. Builds `main.js` and attests its build provenance.
+3. Builds `main.js` and has GitHub sign a record that this workflow built it from this commit, so anyone can check that the file in the release wasn't built elsewhere or changed afterward (`gh attestation verify main.js --repo akabanov/obsidian-songbook-maker-plugin`).
 4. Publishes a GitHub release for the tag, with `main.js` and `manifest.json` attached and notes generated from the commits. Versions with a pre-release suffix (`-beta.N`) are marked as pre-releases.
 
 BRAT picks up the new version on its next update check, or right away with **BRAT: Check for updates to all beta plugins**.
