@@ -62,11 +62,9 @@ export async function exportSongs(
 				language: settings.bookLanguage,
 				modified: new Date(),
 				cover: await loadCover(app, node, settings),
-				layout: {
-					songTitleOwnPage: settings.songTitleOwnPage,
-					sectionTitleOwnPage: settings.sectionTitleOwnPage,
-				},
+				sectionTitleOwnPage: settings.sectionTitleOwnPage,
 				songs,
+				textSize: settings.textSize,
 				sectionTitleScale: settings.sectionTitleScale,
 				songTitleScale: settings.songTitleScale,
 			},

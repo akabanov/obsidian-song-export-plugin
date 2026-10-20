@@ -50,15 +50,15 @@ function songIcon(width: number): string {
 
 /**
  * The song title with its icon, `iconWidth` em wide. Title lines are split
- * with `<br/>`, which doesn't depend on the stylesheet; `spaced` puts an empty
- * line between them.
+ * with `<br/>`, which doesn't depend on the stylesheet, and an empty line
+ * between them.
  */
-export function songHeading(titleLines: string[], spaced: boolean, iconWidth: number): string {
-	const lines = titleLines.map(escapeXml).join(spaced ? '<br/>\n<br/>\n' : '<br/>\n');
+function songHeading(titleLines: string[], iconWidth: number): string {
+	const lines = titleLines.map(escapeXml).join('<br/>\n<br/>\n');
 	return `<div class="song-heading">\n<div class="icon">${songIcon(iconWidth)}</div>\n<h1 class="song-title">${lines}</h1>\n</div>`;
 }
 
-export function sectionHeading(name: string): string {
+function sectionHeading(name: string): string {
 	return `<h2 class="section-title">${escapeXml(name)}</h2>`;
 }
 
@@ -75,21 +75,24 @@ function content(lines: string[]): string {
 	return `<div class="content">\n${rows}\n</div>`;
 }
 
-const chapterAttribute = (chapter: boolean) => (chapter ? ' epub:type="chapter"' : '');
-
-/** Titles only (a song title, a section title or both), centered on the page. */
-export function titlePage(
+/** The song title alone, centered on the page, opening the song's chapter. */
+export function songTitlePage(
 	language: string,
 	title: string,
-	headings: string,
-	chapter: boolean,
+	titleLines: string[],
+	iconWidth: number,
 ): string {
 	return page(
 		language,
 		title,
-		`class="page title-page"${chapterAttribute(chapter)}`,
-		headings,
+		'class="page title-page" epub:type="chapter"',
+		songHeading(titleLines, iconWidth),
 	);
+}
+
+/** A section title alone, centered on the page. */
+export function sectionTitlePage(language: string, title: string, name: string): string {
+	return page(language, title, 'class="page title-page"', sectionHeading(name));
 }
 
 /** One section's content on its own page. */
@@ -101,27 +104,13 @@ export function sectionContentPage(
 	return page(language, title, 'class="page content-page"', content(lines));
 }
 
-/**
- * Sections running together, each title followed by its content, below the
- * song heading when given.
- */
-export function runningPage(
-	language: string,
-	title: string,
-	sections: Section[],
-	heading: string | null,
-): string {
+/** Sections running together, each title followed by its content. */
+export function runningPage(language: string, title: string, sections: Section[]): string {
 	const body = sections.map(
 		(section) =>
 			`<div class="section">\n${sectionHeading(section.name)}\n${content(section.lines)}\n</div>`,
 	);
-	if (heading) body.unshift(heading);
-	return page(
-		language,
-		title,
-		`class="song"${chapterAttribute(heading !== null)}`,
-		body.join('\n'),
-	);
+	return page(language, title, 'class="song"', body.join('\n'));
 }
 
 // The image is wrapped in an SVG scaled to the page, the usual way to get a

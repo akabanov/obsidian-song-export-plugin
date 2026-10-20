@@ -24,10 +24,10 @@ That saved a wretch like me
 Click the songbook icon in the left ribbon, or run **Export songs to EPUB**, and you get a book where:
 
 - 📖 **Every song is a chapter**, opened by a clean title (`Artist` over `Title`).
-- 🔖 **Pick a layout**: give song titles and section titles (`[Verse 1]`, `[Chorus]` …) their own pages, flash-card style, for drilling one part at a time; or run a song's sections together, for playing straight through. Every song starts on a new page.
+- 🔖 **Practice with flashcards, or play straight through**: with flashcard-style sections, each section title (`[Verse 1]`, `[Chorus]` …) is the front of a card and its content is on the next page, so you can drill one part at a time. Turn them off for a regular songbook layout.
 - 🖼️ **It has a cover**: a bundled black-and-white illustration, your own image, or none.
-- 🧹 **The clutter is gone**: tab lines, `--` separators, `%t`-style rendering hints, stray whitespace and empty sections are dropped. Everything outside `chords` blocks stays in your vault.
-- ✍️ **It reads well on e-ink**: titles are sized by multipliers you choose, the text uses your reader's font, and every size scales with its font-size setting. The book works with Kobo's stricter EPUB renderer too.
+- ✍️ **It reads well on e-ink**: the text uses your reader's font, sized relative to your other books (say, 80% to fit long lines), titles are sized by multipliers you choose, and everything follows your reader's font-size setting. The book works with Kobo's stricter EPUB renderer too.
+- 🎼 **Chords sit on their own line, not above a syllable**: in Obsidian a code block uses a monospaced font, where every letter is the same width, so spaces can line a chord up with its word. Your reader's font isn't monospaced, so those spaces wouldn't line up anyway; the book drops them on purpose, and each chord line shows just the chords, in order, above its lyric line.
 - 🗂️ **The table of contents stays short**: songs only, in alphabetical order.
 
 ## Install with BRAT
@@ -52,7 +52,8 @@ BRAT checks for new releases and updates the plugin for you. Songbook Maker runs
 | Book title / author / language | My Songbook / Obsidian / EN |
 | Title split sequence | ` - ` |
 | Cover image | bundled default (or none, or your own image) |
-| Song title / section title on its own page | on / on |
+| Flashcard-style sections | on |
+| Text size | 100% of your reader's font size (65–130%) |
 | Section / song title size | 1.25× content / 1.25× section |
 
 ## Privacy

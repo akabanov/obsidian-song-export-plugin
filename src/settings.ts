@@ -34,8 +34,9 @@ export interface SongbookMakerSettings {
 	titleSplitSequence: string;
 	coverImage: CoverImage;
 	coverImagePath: string;
-	songTitleOwnPage: boolean;
 	sectionTitleOwnPage: boolean;
+	/** Percent of the reader's font size. */
+	textSize: number;
 	sectionTitleScale: number;
 	songTitleScale: number;
 	/** Stable EPUB identifier, generated on first load. Not shown in the UI. */
@@ -53,41 +54,45 @@ export const DEFAULT_SETTINGS: SongbookMakerSettings = {
 	titleSplitSequence: ' - ',
 	coverImage: 'default',
 	coverImagePath: '',
-	songTitleOwnPage: true,
 	sectionTitleOwnPage: true,
+	textSize: 100,
 	sectionTitleScale: 1.25,
 	songTitleScale: 1.25,
 	bookId: '',
 };
 
-/** Settings of 0.1.0-beta.1 that no longer exist, dropped from saved data on load. */
-const REMOVED_SETTINGS = ['pageLayout', 'titleFont', 'contentFont'];
+/** Settings that no longer exist, dropped from saved data on load. */
+const REMOVED_SETTINGS = ['pageLayout', 'titleFont', 'contentFont', 'songTitleOwnPage'];
 
 /**
  * Fills in defaults for missing settings and carries the old *Page layout*
- * choice over to the two title page toggles.
+ * choice over to the section title page toggle.
  */
 export function migrateSettings(
 	data: Record<string, unknown> | null,
 ): SongbookMakerSettings {
 	const saved = { ...data };
-	if (saved.pageLayout === 'book' && !('songTitleOwnPage' in saved)) {
-		saved.songTitleOwnPage = false;
+	if (saved.pageLayout === 'book' && !('sectionTitleOwnPage' in saved)) {
 		saved.sectionTitleOwnPage = false;
 	}
 	for (const key of REMOVED_SETTINGS) delete saved[key];
 	const settings = { ...DEFAULT_SETTINGS, ...(saved as Partial<SongbookMakerSettings>) };
-	settings.sectionTitleScale = clampScale(settings.sectionTitleScale);
-	settings.songTitleScale = clampScale(settings.songTitleScale);
+	settings.textSize = clamp(settings.textSize, MIN_TEXT_SIZE, MAX_TEXT_SIZE);
+	settings.sectionTitleScale = clamp(settings.sectionTitleScale, MIN_SCALE, MAX_SCALE);
+	settings.songTitleScale = clamp(settings.songTitleScale, MIN_SCALE, MAX_SCALE);
 	return settings;
 }
+
+/** Text size ranges from 65% to 130% of the reader's font size. */
+export const MIN_TEXT_SIZE = 65;
+export const MAX_TEXT_SIZE = 130;
 
 /** Title size multipliers range from 1 to 3; older versions allowed up to 5. */
 export const MIN_SCALE = 1;
 export const MAX_SCALE = 3;
 
-function clampScale(value: number): number {
-	return Math.min(MAX_SCALE, Math.max(MIN_SCALE, value));
+function clamp(value: number, min: number, max: number): number {
+	return Math.min(max, Math.max(min, value));
 }
 
 export class SongbookMakerSettingTab extends PluginSettingTab {
@@ -177,16 +182,24 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 		}
 
 		this.addToggle(
-			'Song title on its own page',
-			'Otherwise the song content starts right below the song title.',
-			'songTitleOwnPage',
-		);
-		this.addToggle(
-			'Section title on its own page',
-			'Each section title gets a page, and the section content starts on the next one. Otherwise sections run together.',
+			'Flashcard-style sections',
+			'Each section title gets a page, and its content follows on the next, for drilling one part at a time. Turn off for a regular songbook layout.',
 			'sectionTitleOwnPage',
 		);
 
+		new Setting(this.containerEl)
+			.setName('Text size')
+			.setDesc("Percent of your reader's font size. Titles scale with it.")
+			.addSlider((slider) =>
+				slider
+					.setLimits(MIN_TEXT_SIZE, MAX_TEXT_SIZE, 5)
+					.setValue(this.plugin.settings.textSize)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						this.plugin.settings.textSize = value;
+						await this.plugin.saveSettings();
+					}),
+			);
 		this.addScale(
 			'Section title size',
 			'Multiplier of the content text size.',
@@ -227,7 +240,7 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 	private addToggle(
 		name: string,
 		desc: string,
-		key: 'showInFolder' | 'songTitleOwnPage' | 'sectionTitleOwnPage',
+		key: 'showInFolder' | 'sectionTitleOwnPage',
 	): void {
 		new Setting(this.containerEl)
 			.setName(name)

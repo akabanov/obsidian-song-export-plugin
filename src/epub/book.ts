@@ -12,9 +12,8 @@ import {
 	coverPage,
 	runningPage,
 	sectionContentPage,
-	sectionHeading,
-	songHeading,
-	titlePage,
+	sectionTitlePage,
+	songTitlePage,
 } from './pages';
 import { bookStylesheet, modernStylesheet, songIconWidth } from './stylesheet';
 import { createZip, Deflate, ZipEntry } from './zip';
@@ -23,12 +22,6 @@ export interface BookSong {
 	title: string;
 	titleLines: string[];
 	sections: Section[];
-}
-
-/** Which titles get a page to themselves. Every song starts on a new page. */
-export interface PageLayout {
-	songTitleOwnPage: boolean;
-	sectionTitleOwnPage: boolean;
 }
 
 export type CoverMediaType = 'image/jpeg' | 'image/png' | 'image/webp';
@@ -45,8 +38,11 @@ export interface Book {
 	language: string;
 	modified: Date;
 	cover: BookCover | null;
-	layout: PageLayout;
+	/** Each song title gets a page; this gives each section title one too. */
+	sectionTitleOwnPage: boolean;
 	songs: BookSong[];
+	/** Percent of the reader's font size. */
+	textSize: number;
 	sectionTitleScale: number;
 	songTitleScale: number;
 }
@@ -101,51 +97,41 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 		);
 	}
 
-	const { songTitleOwnPage, sectionTitleOwnPage } = book.layout;
-	const scales = {
+	const styles = {
+		textSize: book.textSize,
 		sectionTitleScale: book.sectionTitleScale,
 		songTitleScale: book.songTitleScale,
 	};
-	const iconWidth = songIconWidth(scales);
+	const iconWidth = songIconWidth(styles);
 	book.songs.forEach((song, i) => {
 		const songId = `song-${pad(i + 1, 3)}`;
 		const songPath = `text/${songId}.xhtml`;
 		toc.push({ title: song.title, href: songPath });
-		const heading = songHeading(song.titleLines, false, iconWidth);
-		const ownPageHeading = songHeading(song.titleLines, true, iconWidth);
-		// Pages with the song heading hold the inline SVG icon.
-		const addSongPage = (xhtml: string) => addPage(songId, songPath, xhtml, 'svg');
+		// The song title page holds the inline SVG icon.
+		addPage(
+			songId,
+			songPath,
+			songTitlePage(lang, song.title, song.titleLines, iconWidth),
+			'svg',
+		);
 
-		if (!sectionTitleOwnPage) {
-			if (songTitleOwnPage) {
-				addSongPage(titlePage(lang, song.title, ownPageHeading, true));
-				addPage(
-					`${songId}-content`,
-					`text/${songId}-content.xhtml`,
-					runningPage(lang, song.title, song.sections, null),
-				);
-			} else {
-				addSongPage(runningPage(lang, song.title, song.sections, heading));
-			}
+		if (!book.sectionTitleOwnPage) {
+			addPage(
+				`${songId}-content`,
+				`text/${songId}-content.xhtml`,
+				runningPage(lang, song.title, song.sections),
+			);
 			return;
 		}
 
-		if (songTitleOwnPage) addSongPage(titlePage(lang, song.title, ownPageHeading, true));
 		song.sections.forEach((section, j) => {
 			const sectionId = `${songId}-${pad(j + 1, 2)}`;
 			const title = `${song.title}: ${section.name}`;
-			if (j === 0 && !songTitleOwnPage) {
-				// The song title shares the first section title's page.
-				addSongPage(
-					titlePage(lang, song.title, `${heading}\n${sectionHeading(section.name)}`, true),
-				);
-			} else {
-				addPage(
-					sectionId,
-					`text/${sectionId}.xhtml`,
-					titlePage(lang, title, sectionHeading(section.name), false),
-				);
-			}
+			addPage(
+				sectionId,
+				`text/${sectionId}.xhtml`,
+				sectionTitlePage(lang, title, section.name),
+			);
 			addPage(
 				`${sectionId}-content`,
 				`text/${sectionId}-content.xhtml`,
@@ -154,11 +140,8 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 		});
 	});
 
-	addText(
-		'styles/book.css',
-		bookStylesheet(scales),
-	);
-	addText('styles/modern.css', modernStylesheet(scales));
+	addText('styles/book.css', bookStylesheet(styles));
+	addText('styles/modern.css', modernStylesheet(styles));
 	addText('nav.xhtml', navDocument(lang, book.title, toc));
 	addText('toc.ncx', ncxDocument(book.id, book.title, toc));
 	addText(

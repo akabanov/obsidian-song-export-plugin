@@ -1,6 +1,8 @@
 import { SONG_ICON_ASPECT } from './pages';
 
 export interface StylesheetOptions {
+	/** Percent of the reader's font size; every size below is in em of it. */
+	textSize: number;
 	sectionTitleScale: number;
 	songTitleScale: number;
 }
@@ -48,6 +50,10 @@ export function bookStylesheet(options: StylesheetOptions): string {
 	padding: 0;
 }
 
+body {
+	font-size: ${round(options.textSize)}%;
+}
+
 .page {
 	padding: 1em;
 }
@@ -81,10 +87,6 @@ h1, h2 {
 
 .section-title {
 	font-size: ${sectionSize}em;
-}
-
-.song-heading + .section-title {
-	margin-top: 1em;
 }
 
 .content {
