@@ -124,7 +124,7 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 					},
 					{
 						name: 'Book language',
-						desc: 'The language most of your songs are in. Your reader uses it to pick a dictionary and a text-to-speech voice; songs in other languages still show just fine.',
+						desc: 'Your reader uses it to pick a dictionary and a text-to-speech voice; songs in other languages still show just fine.',
 						control: { type: 'dropdown', key: 'bookLanguage', options: LANGUAGE_OPTIONS },
 					},
 					{
