@@ -32,6 +32,7 @@ Click the songbook icon in the left ribbon, or run **Export songs to EPUB**, and
 - 🎼 **You choose how chords line up**: by default, songs use your reader's font, which is easiest to read on a small screen. Its letters vary in width, so spaces can't place a chord over its syllable; the book drops the extra spaces, and each chord line lists the chords in order above its lyric line. To keep every chord exactly where you put it, turn off **Use regular font**: songs keep their spacing, in a monospaced font embedded in the book.
 - 🎸 **Guitar tabs stay readable**: tab lines (`e|---0---|`) are set in a monospaced font embedded in the book, so the strings line up even on readers without a monospaced font of their own.
 - 🗂️ **The table of contents stays short**: songs only, in alphabetical order.
+- 📚 **Group songs your way**: set **Group by property** to a note property, such as `song-status` or `genre`, and the book gets a part for each value, with a title page, the songs under each group in the table of contents, and an index at the back. List the values you want in **Groups** to pick them and their order (say, `learning, polishing`).
 - 🏷️ **Templates stay out**: notes tagged `#template` (or any tags you choose) are left out of the book.
 
 ## Works with your chord plugins
@@ -63,6 +64,7 @@ BRAT checks for new releases and updates the plugin for you. Songbook Maker runs
 | Code block name | `chords` |
 | Output file | `~/Documents/my-songbook.epub` (asks before overwriting) |
 | Show in folder after export | off |
+| Group by property / Groups | none (no groups) / every value, alphabetically |
 | Book title / author / language | My Songbook / Obsidian / English |
 | Title split sequence | ` - ` |
 | Cover image | bundled default (or none, or your own image) |
@@ -70,7 +72,7 @@ BRAT checks for new releases and updates the plugin for you. Songbook Maker runs
 | Use regular font | on (off: keep chord spacing, in a monospaced font) |
 | Text size | 100% of your reader's font size (65–130%) |
 | Monospace text size | 70% of the text size (50–100%), for tabs and monospaced songs |
-| Section / song title size | 1.25× content / 1.25× section |
+| Section / song / group title size | 1.25× content / 1.25× section / 1.25× song |
 
 ## Privacy and disclosures
 

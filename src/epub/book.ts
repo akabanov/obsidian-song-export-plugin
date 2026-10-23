@@ -1,6 +1,7 @@
 import monoFont from '../../assets/mono.ttf';
 import { Section } from '../song/sections';
 import { imageSize } from './image-size';
+import { indexPage } from './index-page';
 import {
 	CONTAINER_XML,
 	ManifestItem,
@@ -11,18 +12,30 @@ import {
 } from './package';
 import {
 	coverPage,
+	groupTitlePage,
 	runningPage,
 	sectionContentPage,
 	sectionTitlePage,
 	songTitlePage,
 } from './pages';
-import { bookStylesheet, MONO_STYLESHEET, modernStylesheet, songIconWidth } from './stylesheet';
+import {
+	bookStylesheet,
+	groupIconWidth,
+	MONO_STYLESHEET,
+	modernStylesheet,
+	songIconWidth,
+} from './stylesheet';
 import { createZip, Deflate, ZipEntry } from './zip';
 
 export interface BookSong {
 	title: string;
 	titleLines: string[];
 	sections: Section[];
+}
+
+export interface BookGroup {
+	title: string;
+	songs: BookSong[];
 }
 
 export type CoverMediaType = 'image/jpeg' | 'image/png' | 'image/webp';
@@ -43,13 +56,21 @@ export interface Book {
 	sectionTitleOwnPage: boolean;
 	/** All song content in the monospace font, not only tabs. */
 	monospace: boolean;
+	/** Every song once, in book order without groups, in the index with them. */
 	songs: BookSong[];
+	/**
+	 * Songs by group, each group opened by a title page; a song may be in more
+	 * than one. The index lists `songs`, linking to each one's first page.
+	 * Null: `songs` alone, with no index.
+	 */
+	groups: BookGroup[] | null;
 	/** Percent of the reader's font size. */
 	textSize: number;
 	/** Percent of the content text size, for monospace text. */
 	monoTextSize: number;
 	sectionTitleScale: number;
 	songTitleScale: number;
+	groupTitleScale: number;
 }
 
 const COVER_EXTENSIONS: Record<CoverMediaType, string> = {
@@ -59,6 +80,25 @@ const COVER_EXTENSIONS: Record<CoverMediaType, string> = {
 };
 
 const XHTML = 'application/xhtml+xml';
+
+/** The index's title in the book's language, English by default. */
+const INDEX_TITLES: Record<string, string> = {
+	cs: 'Rejstřík',
+	de: 'Register',
+	en: 'Index',
+	es: 'Índice',
+	fr: 'Index',
+	it: 'Indice',
+	ja: '索引',
+	ko: '색인',
+	nl: 'Register',
+	pl: 'Indeks',
+	pt: 'Índice',
+	ru: 'Указатель',
+	sv: 'Register',
+	uk: 'Покажчик',
+	zh: '索引',
+};
 
 /** Builds the EPUB 3 file (with an EPUB 2 NCX) for the book. */
 export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
@@ -111,12 +151,14 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 		monoTextSize: book.monoTextSize,
 		sectionTitleScale: book.sectionTitleScale,
 		songTitleScale: book.songTitleScale,
+		groupTitleScale: book.groupTitleScale,
 	};
 	const iconWidth = songIconWidth(styles);
-	book.songs.forEach((song, i) => {
-		const songId = `song-${pad(i + 1, 3)}`;
+	let songCount = 0;
+	/** Adds the song's pages and returns the path of its title page. */
+	const addSong = (song: BookSong): string => {
+		const songId = `song-${pad(++songCount, 3)}`;
 		const songPath = `text/${songId}.xhtml`;
-		toc.push({ title: song.title, href: songPath });
 		// The song title page holds the inline SVG icon.
 		addPage(
 			songId,
@@ -131,7 +173,7 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 				`text/${songId}-content.xhtml`,
 				runningPage(lang, song.title, song.sections, book.monospace),
 			);
-			return;
+			return songPath;
 		}
 
 		song.sections.forEach((section, j) => {
@@ -148,7 +190,40 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 				sectionContentPage(lang, title, section.lines, book.monospace),
 			);
 		});
-	});
+		return songPath;
+	};
+
+	if (book.groups) {
+		const firstPaths = new Map<BookSong, string>();
+		book.groups.forEach((group, i) => {
+			const groupId = `group-${pad(i + 1, 2)}`;
+			const groupPath = `text/${groupId}.xhtml`;
+			// The group title page holds the inline SVG floret.
+			addPage(
+				groupId,
+				groupPath,
+				groupTitlePage(lang, group.title, groupIconWidth(styles)),
+				'svg',
+			);
+			const children = group.songs.map((song) => {
+				const href = addSong(song);
+				if (!firstPaths.has(song)) firstPaths.set(song, href);
+				return { title: song.title, href };
+			});
+			toc.push({ title: group.title, href: groupPath, children });
+		});
+
+		const indexTitle = INDEX_TITLES[lang] ?? 'Index';
+		const entries = book.songs.flatMap((song) => {
+			const path = firstPaths.get(song);
+			// Paths relative to the index page, which is in text/ too.
+			return path ? [{ title: song.title, href: path.replace(/^text\//, '') }] : [];
+		});
+		addPage('index', 'text/index.xhtml', indexPage(lang, indexTitle, entries));
+		toc.push({ title: indexTitle, href: 'text/index.xhtml' });
+	} else {
+		for (const song of book.songs) toc.push({ title: song.title, href: addSong(song) });
+	}
 
 	addText('styles/book.css', bookStylesheet(styles));
 	addText('styles/modern.css', modernStylesheet(styles));

@@ -1,4 +1,4 @@
-import { SONG_ICON_ASPECT } from './pages';
+import { GROUP_ICON_ASPECT, SONG_ICON_ASPECT } from './pages';
 
 export interface StylesheetOptions {
 	/** Percent of the reader's font size; every size below is in em of it. */
@@ -7,6 +7,7 @@ export interface StylesheetOptions {
 	monoTextSize: number;
 	sectionTitleScale: number;
 	songTitleScale: number;
+	groupTitleScale: number;
 }
 
 /*
@@ -18,12 +19,25 @@ export interface StylesheetOptions {
 const ICON_WIDTH = 2.56;
 const MODERN_ICON_WIDTH = 1.92;
 
+/* The group floret is nearly square, so it is narrower than the song icon
+   for about the same height relative to its title. */
+const GROUP_ICON_WIDTH = 1.6;
+const MODERN_GROUP_ICON_WIDTH = 1.2;
+
 const songScale = (options: StylesheetOptions) =>
 	options.sectionTitleScale * options.songTitleScale;
+
+const groupScale = (options: StylesheetOptions) =>
+	songScale(options) * options.groupTitleScale;
 
 /** The song icon's width in em of the content text size, for RMSDK. */
 export function songIconWidth(options: StylesheetOptions): number {
 	return ICON_WIDTH * songScale(options);
+}
+
+/** The group floret's width in em of the content text size, for RMSDK. */
+export function groupIconWidth(options: StylesheetOptions): number {
+	return GROUP_ICON_WIDTH * groupScale(options);
 }
 
 /*
@@ -46,6 +60,8 @@ export function bookStylesheet(options: StylesheetOptions): string {
 	// One title line (its font size × line-height 1.2), matching the empty
 	// line between the two title lines on a song title page.
 	const iconGap = round(songScale(options) * 1.2);
+	const groupSize = round(groupScale(options));
+	const groupIconGap = round(groupScale(options) * 1.2);
 	const monoSize = round(options.monoTextSize / 100);
 
 	return `html, body {
@@ -86,6 +102,18 @@ h1, h2 {
 
 .song-title {
 	font-size: ${songSize}em;
+}
+
+.group-heading {
+	text-align: center;
+}
+
+.group-heading .icon {
+	margin-bottom: ${groupIconGap}em;
+}
+
+.group-title {
+	font-size: ${groupSize}em;
 }
 
 .section-title {
@@ -141,6 +169,32 @@ h1, h2 {
 .song .section-title {
 	margin: 0 0 0.5em;
 }
+
+/* The index: song titles under their initial letters, as plain text. */
+.index {
+	padding: 1em;
+}
+
+.index-title {
+	font-size: ${songSize}em;
+	margin: 0 0 0.5em;
+}
+
+.index-letter {
+	font-size: ${sectionSize}em;
+	margin: 1em 0 0.25em;
+}
+
+.index-entry {
+	margin: 0;
+	text-indent: 0;
+	line-height: 1.5;
+}
+
+.index a {
+	color: inherit;
+	text-decoration: none;
+}
 `;
 }
 
@@ -148,6 +202,7 @@ h1, h2 {
    because of the calc(), and keeps book.css's values. */
 export function modernStylesheet(options: StylesheetOptions): string {
 	const iconWidth = MODERN_ICON_WIDTH * songScale(options);
+	const groupIconWidth = MODERN_GROUP_ICON_WIDTH * groupScale(options);
 	return `/* Centered vertically: a flex column at least one screen tall. The height
    leaves out the page's own vertical padding so a page doesn't spill a blank
    one, and min-height lets long content flow over the following pages. */
@@ -169,7 +224,12 @@ export function modernStylesheet(options: StylesheetOptions): string {
 	height: ${round(iconWidth * SONG_ICON_ASPECT)}em;
 }
 
-.icon {
+.group-icon {
+	width: ${round(groupIconWidth)}em;
+	height: ${round(groupIconWidth * GROUP_ICON_ASPECT)}em;
+}
+
+.icon, .group-heading .icon {
 	margin-bottom: 1em;
 }
 `;

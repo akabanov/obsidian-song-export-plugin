@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, SettingDefinitionItem } from 'obsidian';
 import type SongbookMakerPlugin from '../main';
 import { SONGBOOK_ICON } from './icon';
+import { PropertyNameSuggest, PropertyValueListSuggest } from './property-suggest';
 import { TagListSuggest } from './tag-suggest';
 import {
 	DEFAULT_SETTINGS,
@@ -44,12 +45,14 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 	async setControlValue(key: string, value: unknown): Promise<void> {
 		(this.plugin.settings as unknown as Record<string, unknown>)[key] = value;
 		await this.plugin.saveSettings();
-		// The cover image path is shown only for a custom cover.
-		if (key === 'coverImage') this.refreshDomState();
+		// The cover image path is shown only for a custom cover, and the group
+		// settings only with a group property.
+		if (key === 'coverImage' || key === 'groupProperty') this.refreshDomState();
 	}
 
 	getSettingDefinitions(): SettingDefinitionItem<Key>[] {
 		const settings = () => this.plugin.settings;
+		const grouped = () => settings().groupProperty.trim() !== '';
 		return [
 			{
 				type: 'group',
@@ -97,6 +100,48 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 						name: 'Show in folder after export',
 						desc: "Opens your system's file manager with the EPUB file selected.",
 						control: { type: 'toggle', key: 'showInFolder' },
+					},
+				],
+			},
+			{
+				type: 'group',
+				heading: 'Groups',
+				items: [
+					{
+						name: 'Group by property',
+						desc: 'Songs are grouped by the values of this note property, each group opening with a title page, and the book ends with an index. Leave empty to list all songs without groups.',
+						// A text field with completion from the vault's properties.
+						render: (setting) => {
+							let suggest: PropertyNameSuggest | undefined;
+							setting.addText((text) => {
+								text
+									.setValue(settings().groupProperty)
+									.onChange((value) => this.setControlValue('groupProperty', value));
+								suggest = new PropertyNameSuggest(this.app, text.inputEl);
+							});
+							return () => suggest?.close();
+						},
+					},
+					{
+						name: 'Groups',
+						desc: 'Property values to include, in book order, separated by commas. Songs with none of them are left out. Leave empty to include every value, in alphabetical order.',
+						aliases: ['group order'],
+						visible: grouped,
+						// A text field with completion from the property's values.
+						render: (setting) => {
+							let suggest: PropertyValueListSuggest | undefined;
+							setting.addText((text) => {
+								text
+									.setValue(settings().groups)
+									.onChange((value) => this.setControlValue('groups', value));
+								suggest = new PropertyValueListSuggest(
+									this.app,
+									text.inputEl,
+									() => settings().groupProperty,
+								);
+							});
+							return () => suggest?.close();
+						},
 					},
 				],
 			},
@@ -210,6 +255,19 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 						control: {
 							type: 'slider',
 							key: 'songTitleScale',
+							min: MIN_SCALE,
+							max: MAX_SCALE,
+							step: 0.25,
+							displayFormat: times,
+						},
+					},
+					{
+						name: 'Group title size',
+						desc: 'Multiplier of the song title size.',
+						visible: grouped,
+						control: {
+							type: 'slider',
+							key: 'groupTitleScale',
 							min: MIN_SCALE,
 							max: MAX_SCALE,
 							step: 0.25,

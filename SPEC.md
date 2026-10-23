@@ -17,15 +17,15 @@ Both run the same export:
 
 1. If the output file already exists, a confirmation dialog asks whether to overwrite it. Cancelling stops the export without changing anything.
 2. While the export runs, a notice says so.
-3. When it finishes, a notice reports the output path, how many songs were exported and how many were skipped. Skipped songs and the reason for each are written to the developer console.
-   If no songs are found, the export fails with an error notice and no file is written.
+3. When it finishes, a notice reports the output path, how many songs were exported and how many were skipped. Skipped songs and the reason for each are written to the developer console. With [groups](#groups), it also reports how many groups there are, how many songs were left out for having none of the groups, and the names of listed groups left out for having no songs.
+   If no songs are found, or with groups none of them is in a group, the export fails with an error notice and no file is written.
 4. On failure (path not writable, cover image missing, etc.) a notice shows the error and no partial file is left behind: the book is written to a temporary file in the target directory and then renamed over the target.
 
 Starting an export while one is running does nothing.
 
 ## Settings
 
-The settings tab is declared with `getSettingDefinitions()`, so Obsidian renders it and indexes every setting for the settings search. It has the songbook icon. Settings are in three groups, in this order:
+The settings tab is declared with `getSettingDefinitions()`, so Obsidian renders it and indexes every setting for the settings search. It has the songbook icon. Settings are in four groups, in this order:
 
 | Setting | Default | Notes |
 |---|---|---|
@@ -34,6 +34,9 @@ The settings tab is declared with `getSettingDefinitions()`, so Obsidian renders
 | Code block name | `chords` | Info string of the code blocks that hold song content, the same as Chord Sheets' default. Empty means the default. |
 | Output file | `~/Documents/my-songbook.epub` | Absolute path; a leading `~` expands to the user's home directory. Empty means the default. Missing parent directories are created. A relative path fails the export with an error notice. |
 | Show in folder after export | Off | Toggle. After a successful export, opens the system file manager (Finder, Explorer, …) with the EPUB selected, through Electron's `shell.showItemInFolder`. If that fails, a warning goes to the developer console; the export still counts as successful. |
+| **Groups** | | |
+| Group by property | empty (no groups) | Name of the note property (frontmatter) to group songs by. Typing suggests the properties used in the vault. Empty: the book lists all songs without groups. See [Groups](#groups). |
+| Groups | empty (every value) | Shown only with a group property. Values of the property to include, in book order, separated by commas (a value may contain spaces). Typing suggests the property's values used in the vault. Empty: every value is a group, in alphabetical order. |
 | **Book** | | |
 | Book title | `My Songbook` | EPUB `dc:title`. Empty means the default. |
 | Book author | `Obsidian` | EPUB `dc:creator`; omitted when empty. |
@@ -48,6 +51,7 @@ The settings tab is declared with `getSettingDefinitions()`, so Obsidian renders
 | Monospace text size | `70%` | Percent of the content text size, for monospace text: tab blocks, and all song content with *Use regular font* off. Slider from 50 to 100 in steps of 5. |
 | Section title size | `1.25×` | Multiplier of the content text size. Slider from 1 to 3 in steps of 0.25. |
 | Song title size | `1.25×` | Multiplier of the **section title** size (so about 1.56× content by default). Chaining sizes like this is the usual modular type scale. Slider from 1 to 3 in steps of 0.25. Saved values above 3 (allowed up to 0.1.0-beta.3) are lowered to 3 on load. |
+| Group title size | `1.25×` | Shown only with a group property. Multiplier of the **song title** size (so about 1.95× content by default). Slider from 1 to 3 in steps of 0.25. |
 
 Text settings other than *Title split sequence* are trimmed when the export reads them, not as they're typed, so typing a space isn't undone. Saved slider values outside their range are moved into it on load.
 
@@ -55,9 +59,9 @@ Text settings other than *Title split sequence* are trimmed when the export read
 
 The output is one EPUB 3 file containing all songs (with an EPUB 2 NCX for older readers). Each song is a chapter.
 
-The book TOC (`nav.xhtml` and `toc.ncx`) lists only song titles — no section entries. Each TOC entry links to the song's title page.
+The book TOC (`nav.xhtml` and `toc.ncx`) lists only song titles — no section entries. Each TOC entry links to the song's title page. With [groups](#groups), the TOC has two levels: the group titles, each linking to the group's title page, with the group's songs under them, followed by the index.
 
-Songs are ordered alphabetically by note title (case-insensitive, locale-aware). Letters that differ only in case sort together; letters that differ in accents don't.
+Songs are ordered alphabetically by note title (case-insensitive, locale-aware). Letters that differ only in case sort together; letters that differ in accents don't. With groups, this is the order within each group.
 
 The EPUB has a stable `dc:identifier` (a UUID generated once and stored in plugin data as a hidden `bookId` setting) so readers recognise a re-export as the same book, and a `dcterms:modified` timestamp updated on every export.
 
@@ -81,6 +85,22 @@ Every song starts with a page of its own holding only the song title (see [Songs
 - Off: the sections run together on one page that flows as long as it needs: each section title, left-aligned, then its content. A section title is kept on the same page as the start of its content where the reader supports it (`page-break-after: avoid`).
 
 Sizes, title split and TOC (one entry per song, linking to its title page) are the same in both layouts.
+
+### Groups
+
+With a *Group by property* set, songs are grouped by the values of that note property:
+
+- The property name matches ignoring case, as in Obsidian. Its value may be text, a number or a list; each list item is a value. Values are trimmed and match ignoring case.
+- With *Groups* set, those values are the groups, in that order. Songs with none of them are left out.
+- With *Groups* empty, every value used by a song is a group, in alphabetical order of the group titles. Songs without a value are left out.
+- A song with more than one of the groups is in each of them, with its pages repeated.
+- A listed group with no songs is left out.
+
+Each group opens with a title page, centered both ways like a song title page: a black floret, the south west pointing vine leaf (U+1F651) from Noto Sans Symbols 2 (SIL Open Font License), as an inline SVG, with the group title under it. Its body has `epub:type="part"`. The title is the property value with each run of dashes, underscores and spaces turned into one space and the first letter capitalized: `in-progress` becomes `In progress`. The value's spelling comes from *Groups*, or else from the first song with it.
+
+The floret scales with the group title like the song fleuron with the song title: 1.6 × the group title size wide in the SVG's attributes, for Kobo, and 1.2 × in `modern.css`. The gap below it is one group title line in `book.css` and `1em` in `modern.css`.
+
+The book ends with an index, after the last group: every song once, alphabetically, each linking to its first title page. Titles are split under headings by initial letter, uppercase and without accents (`École` under E), except letters of their own in the book's language (Russian Й). Titles that don't start with a letter come first, under `#`. The index is titled in the book's language (*Index*, *Register*, *Указатель*, …; English for others). Without groups, the book has no index.
 
 ## Discovering the songs
 
@@ -180,3 +200,5 @@ All sizes are in `em`, relative to the reader's base font size, so the reader's 
 - Monospace text: content size × *Monospace text size* (default `0.7em`).
 - Section title: bold, content size × section title multiplier (default `1.25em`).
 - Song title: bold, section title size × song title multiplier (default `1.5625em`).
+- Group title: bold, song title size × group title multiplier (default `1.953em`).
+- Index: the title at the song title size, letter headings at the section title size, entries at the content size, as plain text rather than styled links.

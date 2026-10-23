@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import { deflateRawSync, inflateRawSync } from 'node:zlib';
 import { DEFAULT_COVER } from '../cover';
 import { Book, buildEpub } from './book';
+import { indexSections } from './index-page';
 import { escapeXml } from './xml';
 import { createZip, crc32 } from './zip';
 
@@ -76,10 +77,12 @@ const BOOK: Book = {
 			sections: [{ name: 'Intro', lines: ['A'] }],
 		},
 	],
+	groups: null,
 	textSize: 80,
 	monoTextSize: 70,
 	sectionTitleScale: 2,
 	songTitleScale: 1.5,
+	groupTitleScale: 1.25,
 };
 
 describe('crc32', () => {
@@ -286,5 +289,90 @@ describe('buildEpub with sections running together', () => {
 		const nav = textOf(entries, 'OEBPS/nav.xhtml');
 		assert.match(nav, /<a href="text\/song-001.xhtml">/);
 		assert.match(nav, /<a href="text\/song-002.xhtml">/);
+	});
+});
+
+describe('buildEpub with groups', () => {
+	const [armstrong, tom] = BOOK.songs as [Book['songs'][0], Book['songs'][0]];
+	const book: Book = {
+		...BOOK,
+		sectionTitleOwnPage: false,
+		groups: [
+			{ title: 'Learning', songs: [tom] },
+			{ title: 'Polishing', songs: [armstrong, tom] },
+		],
+	};
+	const entries = readZip(buildEpub(book, deflate));
+
+	it('opens each group with a title page and ends with the index', () => {
+		assert.deepEqual(spineOf(book), [
+			'cover',
+			'group-01',
+			'song-001',
+			'song-001-content',
+			'group-02',
+			'song-002',
+			'song-002-content',
+			'song-003',
+			'song-003-content',
+			'index',
+		]);
+		const page = textOf(entries, 'OEBPS/text/group-01.xhtml');
+		assert.match(page, /<body class="page title-page" epub:type="part">/);
+		assert.match(page, /<svg [^>]*class="group-icon" viewBox="0 0 838 779" width="6em" height="5.578em"/);
+		assert.match(page, /<\/svg><\/div>\n<h1 class="group-title">Learning<\/h1>/);
+		assert.match(textOf(entries, 'OEBPS/content.opf'), /<item id="group-01" href="text\/group-01.xhtml" media-type="application\/xhtml\+xml" properties="svg"\/>/);
+	});
+
+	it('nests the songs under their groups in both tables of contents', () => {
+		const nav = textOf(entries, 'OEBPS/nav.xhtml');
+		assert.match(nav, /<li><a href="text\/group-01.xhtml">Learning<\/a>\n<ol>\n<li><a href="text\/song-001.xhtml">Tom &amp; Jerry<\/a><\/li>\n<\/ol>\n<\/li>/);
+		assert.match(nav, /<li><a href="text\/index.xhtml">Index<\/a><\/li>\n<\/ol>\n<\/nav>/);
+		const ncx = textOf(entries, 'OEBPS/toc.ncx');
+		assert.match(ncx, /<meta name="dtb:depth" content="2"\/>/);
+		assert.match(ncx, /<navPoint id="nav-1" playOrder="1">\n<navLabel><text>Learning<\/text><\/navLabel>\n<content src="text\/group-01.xhtml"\/>\n<navPoint id="nav-2" playOrder="2">/);
+		assert.equal([...ncx.matchAll(/<navPoint /g)].length, 6);
+	});
+
+	it('lists each song once in the index, linking to its first page', () => {
+		const index = textOf(entries, 'OEBPS/text/index.xhtml');
+		assert.match(index, /<body class="index" epub:type="index">\n<h1 class="index-title">Index<\/h1>/);
+		assert.match(index, /<h2 class="index-letter">A<\/h2>\n<div class="index-entry"><a href="song-002.xhtml">Armstrong - What a Wonderful World<\/a><\/div>/);
+		assert.match(index, /<h2 class="index-letter">T<\/h2>\n<div class="index-entry"><a href="song-001.xhtml">Tom &amp; Jerry<\/a><\/div>/);
+	});
+
+	it('names the index in the book language', () => {
+		const de = readZip(buildEpub({ ...book, language: 'de' }, deflate));
+		assert.match(textOf(de, 'OEBPS/text/index.xhtml'), /<h1 class="index-title">Register<\/h1>/);
+	});
+
+	it('sizes the group title from the song title size', () => {
+		const css = textOf(entries, 'OEBPS/styles/book.css');
+		assert.match(css, /\.group-title \{\n\tfont-size: 3.75em;/);
+		assert.match(css, /\.group-heading \.icon \{\n\tmargin-bottom: 4.5em;/);
+		const modern = textOf(entries, 'OEBPS/styles/modern.css');
+		assert.match(modern, /\.group-icon \{\n\twidth: 4.5em;\n\theight: 4.183em;/);
+	});
+});
+
+describe('indexSections', () => {
+	const entry = (title: string) => ({ title, href: `${title}.xhtml` });
+	const letters = (titles: string[], language = 'en') =>
+		indexSections(titles.map(entry), language).map((s) => [s.letter, s.entries.map((e) => e.title)]);
+
+	it('splits titles by initial letter, accents folded, symbols under #', () => {
+		assert.deepEqual(letters(['42', "'Round Midnight", 'apple', 'Banana', 'École', 'eleven']), [
+			['#', ['42', "'Round Midnight"]],
+			['A', ['apple']],
+			['B', ['Banana']],
+			['E', ['École', 'eleven']],
+		]);
+	});
+
+	it("keeps a language's own letters apart", () => {
+		assert.deepEqual(letters(['Иволга', 'Йога'], 'ru'), [
+			['И', ['Иволга']],
+			['Й', ['Йога']],
+		]);
 	});
 });

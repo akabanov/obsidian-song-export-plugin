@@ -12,11 +12,18 @@ const SONG_ICON_PATH = `M530 605Q492 605 451 582Q410 559 369.5 522.5Q329 486 289
 /** Height over width of the song icon. */
 export const SONG_ICON_ASPECT = 605 / 879;
 
+// A floret marking group titles: the south west pointing vine leaf (U+1F651)
+// from Noto Sans Symbols 2, © Google, SIL Open Font License 1.1.
+const GROUP_ICON_PATH = `M90 779Q44 779 22 757Q0 735 0 704Q0 666 32 637Q64 608 120 608Q144 608 168.5 613Q193 618 213 625Q246 584 275.5 545Q305 506 334 462.5Q363 419 395 365Q462 253 494.5 179.5Q527 106 543 62Q548 50 552.5 35.5Q557 21 563.5 10.5Q570 0 579 0Q601 0 625 12Q649 24 669.5 41Q690 58 702.5 75Q715 92 715 102Q715 113 700.5 142Q686 171 665 207Q644 243 622 276Q660 259 702 259Q738 259 769 273Q800 287 819 316.5Q838 346 838 393Q838 458 799 515.5Q760 573 691 616.5Q622 660 533 684.5Q444 709 343 709Q295 709 248 703Q218 731 178 755Q138 779 90 779ZM213 555Q209 555 192 533.5Q175 512 154.5 474Q134 436 119 387Q104 338 104 283Q104 218 127 174Q150 130 188 107Q226 84 271 84Q310 84 340.5 99Q371 114 391.5 135.5Q412 157 422.5 178Q433 199 433 211Q433 217 426.5 230Q420 243 412.5 254Q405 265 402 265Q398 265 390.5 244.5Q383 224 366 201Q352 182 331 169Q310 156 282 156Q245 156 222.5 178.5Q200 201 190 237Q180 273 180 313Q180 371 195.5 415.5Q211 460 226 486.5Q241 513 241 519Q241 522 235.5 531Q230 540 223 547.5Q216 555 213 555ZM660 324Q618 324 565 348Q446 508 301 649H311Q401 649 479.5 630Q558 611 617.5 577Q677 543 711 499Q745 455 745 406Q745 373 726 348.5Q707 324 660 324Z`;
+
+/** Height over width of the group icon. */
+export const GROUP_ICON_ASPECT = 779 / 838;
+
 const STYLESHEET_LINKS = STYLESHEETS.map(
 	(href) => `<link rel="stylesheet" type="text/css" href="${href}"/>`,
 ).join('\n');
 
-function page(
+export function page(
 	language: string,
 	title: string,
 	bodyAttributes: string,
@@ -39,14 +46,24 @@ ${body}
 }
 
 /**
- * The song icon, `width` em wide. Kobo's Adobe renderer ignores CSS width and
- * height on inline SVG and uses these attributes; modern.css overrides them
- * for other readers.
+ * An ornament from a glyph path, `width` em wide. Kobo's Adobe renderer
+ * ignores CSS width and height on inline SVG and uses these attributes;
+ * modern.css overrides them for other readers.
  */
-function songIcon(width: number): string {
+function ornament(
+	className: string,
+	path: string,
+	viewWidth: number,
+	viewHeight: number,
+	width: number,
+): string {
 	const em = (value: number) => `${Math.round(value * 1000) / 1000}em`;
-	return `<svg xmlns="http://www.w3.org/2000/svg" class="song-icon" viewBox="0 0 879 605" width="${em(width)}" height="${em(width * SONG_ICON_ASPECT)}" fill="#000000" aria-hidden="true"><path d="${SONG_ICON_PATH}"/></svg>`;
+	const height = (width * viewHeight) / viewWidth;
+	return `<svg xmlns="http://www.w3.org/2000/svg" class="${className}" viewBox="0 0 ${viewWidth} ${viewHeight}" width="${em(width)}" height="${em(height)}" fill="#000000" aria-hidden="true"><path d="${path}"/></svg>`;
 }
+
+const songIcon = (width: number) => ornament('song-icon', SONG_ICON_PATH, 879, 605, width);
+const groupIcon = (width: number) => ornament('group-icon', GROUP_ICON_PATH, 838, 779, width);
 
 /**
  * The song title with its icon, `iconWidth` em wide. Title lines are split
@@ -93,6 +110,19 @@ export function songTitlePage(
 		title,
 		'class="page title-page" epub:type="chapter"',
 		songHeading(titleLines, iconWidth),
+	);
+}
+
+/**
+ * The group title under its floret, `iconWidth` em wide, centered on the
+ * page, opening the group's part of the book.
+ */
+export function groupTitlePage(language: string, title: string, iconWidth: number): string {
+	return page(
+		language,
+		title,
+		'class="page title-page" epub:type="part"',
+		`<div class="group-heading">\n<div class="icon">${groupIcon(iconWidth)}</div>\n<h1 class="group-title">${escapeXml(title)}</h1>\n</div>`,
 	);
 }
 

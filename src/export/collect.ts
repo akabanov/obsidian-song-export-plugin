@@ -1,7 +1,7 @@
 import { App, getAllTags, normalizePath, TFile, TFolder } from 'obsidian';
-import { BookSong } from '../epub/book';
 import { compareSongTitles, parseSong, splitTitle } from '../song/song';
 import { hasExcludedTag } from '../utils/tags';
+import { GroupedSong, propertyValues } from './groups';
 
 export interface SkippedSong {
 	path: string;
@@ -9,7 +9,7 @@ export interface SkippedSong {
 }
 
 export interface CollectedSongs {
-	songs: BookSong[];
+	songs: GroupedSong[];
 	skipped: SkippedSong[];
 }
 
@@ -19,6 +19,8 @@ export interface CollectOptions {
 	titleSplitSequence: string;
 	/** Notes with one of these tags, or a tag nested under one, are left out. */
 	excludedTags: string[];
+	/** Frontmatter property whose values are each song's groups. */
+	groupProperty: string;
 	/** Keep the whitespace in song lines, for a monospace font. */
 	keepSpacing: boolean;
 }
@@ -40,7 +42,7 @@ export async function collectSongs(app: App, options: CollectOptions): Promise<C
 		files = vault.getMarkdownFiles().filter((f) => f.path.startsWith(`${root}/`));
 	}
 
-	const songs: BookSong[] = [];
+	const songs: GroupedSong[] = [];
 	const skipped: SkippedSong[] = [];
 	for (const file of files) {
 		const cache = metadataCache.getFileCache(file);
@@ -59,6 +61,7 @@ export async function collectSongs(app: App, options: CollectOptions): Promise<C
 			songs.push({
 				...result.song,
 				titleLines: splitTitle(result.song.title, options.titleSplitSequence),
+				groups: propertyValues(cache?.frontmatter, options.groupProperty),
 			});
 		}
 	}

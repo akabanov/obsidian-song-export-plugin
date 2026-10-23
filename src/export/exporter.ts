@@ -5,8 +5,10 @@ import { DEFAULT_SETTINGS, SongbookMakerSettings, trimSettings } from '../settin
 import { confirm } from '../ui/confirm-modal';
 import { errorMessage } from '../utils/errors';
 import { expandHome, isFilesystemPath } from '../utils/paths';
+import { parseCommaList } from '../utils/lists';
 import { parseTagList } from '../utils/tags';
 import { collectSongs } from './collect';
+import { groupSongs, SongGroups } from './groups';
 import { NodeApis, nodeApis } from './node';
 
 /**
@@ -45,6 +47,7 @@ export async function exportSongs(
 			blockName: settings.codeBlockName || DEFAULT_SETTINGS.codeBlockName,
 			titleSplitSequence: settings.titleSplitSequence,
 			excludedTags: parseTagList(settings.excludedTags),
+			groupProperty: settings.groupProperty,
 			keepSpacing: !settings.regularFont,
 		});
 		for (const song of skipped) {
@@ -54,6 +57,15 @@ export async function exportSongs(
 			throw new Error(
 				`No songs found in ${songsDirectoryName(settings.songsDirectory)}` +
 					(skipped.length > 0 ? ` (${skipped.length} skipped)` : ''),
+			);
+		}
+		const grouped = settings.groupProperty
+			? groupSongs(songs, parseCommaList(settings.groups))
+			: null;
+		if (grouped?.groups.length === 0) {
+			throw new Error(
+				`No songs have ${settings.groups ? 'any of the listed groups' : 'a group'} ` +
+					`in the ${settings.groupProperty} property`,
 			);
 		}
 
@@ -67,11 +79,13 @@ export async function exportSongs(
 				cover: await loadCover(app, node, settings),
 				sectionTitleOwnPage: settings.sectionTitleOwnPage,
 				monospace: !settings.regularFont,
-				songs,
+				songs: grouped?.songs ?? songs,
+				groups: grouped?.groups ?? null,
 				textSize: settings.textSize,
 				monoTextSize: settings.monoTextSize,
 				sectionTitleScale: settings.sectionTitleScale,
 				songTitleScale: settings.songTitleScale,
+				groupTitleScale: settings.groupTitleScale,
 			},
 			(data) => node.zlib.deflateRawSync(data),
 		);
@@ -79,10 +93,13 @@ export async function exportSongs(
 
 		progress.hide();
 		new Notice(
-			`Exported ${count(songs.length, 'song')} to ${target}` +
+			`Exported ${count(grouped?.songs.length ?? songs.length, 'song')}` +
+				(grouped ? ` in ${count(grouped.groups.length, 'group')}` : '') +
+				` to ${target}.` +
+				(grouped ? groupReport(grouped) : '') +
 				(skipped.length > 0
-					? `. Skipped ${skipped.length}; see the developer console.`
-					: '.'),
+					? ` Skipped ${skipped.length}; see the developer console.`
+					: ''),
 		);
 		if (settings.showInFolder) showInFolder(node, target);
 	} catch (error) {
@@ -90,6 +107,20 @@ export async function exportSongs(
 		console.error('Songbook Maker:', error);
 		new Notice(`Songbook export failed: ${errorMessage(error)}`, 10000);
 	}
+}
+
+/** The songs and groups the grouping left out, for the result notice. */
+function groupReport(grouped: SongGroups): string {
+	const verb = (n: number) => (n === 1 ? 'was' : 'were');
+	let report = '';
+	if (grouped.ungrouped > 0) {
+		report += ` ${count(grouped.ungrouped, 'song')} without a group ${verb(grouped.ungrouped)} left out.`;
+	}
+	if (grouped.emptyGroups.length > 0) {
+		const n = grouped.emptyGroups.length;
+		report += ` Empty ${n === 1 ? 'group' : 'groups'} left out: ${grouped.emptyGroups.join(', ')}.`;
+	}
+	return report;
 }
 
 function songsDirectoryName(directory: string): string {

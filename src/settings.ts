@@ -26,6 +26,10 @@ export interface SongbookMakerSettings {
 	/** Comma- or space-separated tags; notes with one are left out. */
 	excludedTags: string;
 	codeBlockName: string;
+	/** Frontmatter property to group songs by. Empty: no groups. */
+	groupProperty: string;
+	/** Comma-separated values of the group property, in book order. Empty: all. */
+	groups: string;
 	outputFile: string;
 	showInFolder: boolean;
 	bookTitle: string;
@@ -43,6 +47,7 @@ export interface SongbookMakerSettings {
 	monoTextSize: number;
 	sectionTitleScale: number;
 	songTitleScale: number;
+	groupTitleScale: number;
 	/** Stable EPUB identifier, generated on first load. Not shown in the UI. */
 	bookId: string;
 }
@@ -51,6 +56,8 @@ export const DEFAULT_SETTINGS: SongbookMakerSettings = {
 	songsDirectory: '',
 	excludedTags: 'template',
 	codeBlockName: 'chords',
+	groupProperty: '',
+	groups: '',
 	outputFile: '~/Documents/my-songbook.epub',
 	showInFolder: false,
 	bookTitle: 'My Songbook',
@@ -65,6 +72,7 @@ export const DEFAULT_SETTINGS: SongbookMakerSettings = {
 	monoTextSize: 70,
 	sectionTitleScale: 1.25,
 	songTitleScale: 1.25,
+	groupTitleScale: 1.25,
 	bookId: '',
 };
 
@@ -88,6 +96,7 @@ export function migrateSettings(
 	settings.monoTextSize = clamp(settings.monoTextSize, MIN_MONO_TEXT_SIZE, MAX_MONO_TEXT_SIZE);
 	settings.sectionTitleScale = clamp(settings.sectionTitleScale, MIN_SCALE, MAX_SCALE);
 	settings.songTitleScale = clamp(settings.songTitleScale, MIN_SCALE, MAX_SCALE);
+	settings.groupTitleScale = clamp(settings.groupTitleScale, MIN_SCALE, MAX_SCALE);
 	if (!(settings.bookLanguage in LANGUAGES)) settings.bookLanguage = DEFAULT_SETTINGS.bookLanguage;
 	return settings;
 }
@@ -97,6 +106,8 @@ const TRIMMED_SETTINGS = [
 	'songsDirectory',
 	'excludedTags',
 	'codeBlockName',
+	'groupProperty',
+	'groups',
 	'outputFile',
 	'bookTitle',
 	'bookAuthor',

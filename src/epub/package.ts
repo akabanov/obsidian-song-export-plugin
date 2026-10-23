@@ -18,6 +18,8 @@ export interface ManifestItem {
 export interface TocEntry {
 	title: string;
 	href: string;
+	/** Entries one level down, such as the songs of a group. */
+	children?: TocEntry[];
 }
 
 export interface PackageOptions {
@@ -65,11 +67,18 @@ ${spine.join('\n')}
 `;
 }
 
+function navItems(toc: TocEntry[]): string {
+	return toc
+		.map((entry) => {
+			const link = `<a href="${escapeXml(entry.href)}">${escapeXml(entry.title)}</a>`;
+			return entry.children?.length
+				? `<li>${link}\n<ol>\n${navItems(entry.children)}\n</ol>\n</li>`
+				: `<li>${link}</li>`;
+		})
+		.join('\n');
+}
+
 export function navDocument(language: string, title: string, toc: TocEntry[]): string {
-	const items = toc.map(
-		(entry) =>
-			`<li><a href="${escapeXml(entry.href)}">${escapeXml(entry.title)}</a></li>`,
-	);
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${language}" lang="${language}">
@@ -81,7 +90,7 @@ export function navDocument(language: string, title: string, toc: TocEntry[]): s
 <nav epub:type="toc" id="toc">
 <h1>${escapeXml(title)}</h1>
 <ol>
-${items.join('\n')}
+${navItems(toc)}
 </ol>
 </nav>
 </body>
@@ -91,23 +100,32 @@ ${items.join('\n')}
 
 /** The EPUB 2 table of contents, for older readers. */
 export function ncxDocument(id: string, title: string, toc: TocEntry[]): string {
-	const points = toc.map(
-		(entry, i) => `<navPoint id="nav-${i + 1}" playOrder="${i + 1}">
+	// Play order follows the entries in reading order, children included.
+	let order = 0;
+	const navPoints = (entries: TocEntry[]): string =>
+		entries
+			.map((entry) => {
+				const n = ++order;
+				const children = entry.children?.length ? `\n${navPoints(entry.children)}` : '';
+				return `<navPoint id="nav-${n}" playOrder="${n}">
 <navLabel><text>${escapeXml(entry.title)}</text></navLabel>
-<content src="${escapeXml(entry.href)}"/>
-</navPoint>`,
-	);
+<content src="${escapeXml(entry.href)}"/>${children}
+</navPoint>`;
+			})
+			.join('\n');
+	const points = navPoints(toc);
+	const depth = toc.some((entry) => entry.children?.length) ? 2 : 1;
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
 <head>
 <meta name="dtb:uid" content="urn:uuid:${escapeXml(id)}"/>
-<meta name="dtb:depth" content="1"/>
+<meta name="dtb:depth" content="${depth}"/>
 <meta name="dtb:totalPageCount" content="0"/>
 <meta name="dtb:maxPageNumber" content="0"/>
 </head>
 <docTitle><text>${escapeXml(title)}</text></docTitle>
 <navMap>
-${points.join('\n')}
+${points}
 </navMap>
 </ncx>
 `;
