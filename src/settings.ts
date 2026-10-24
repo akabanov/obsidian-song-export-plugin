@@ -25,7 +25,8 @@ export interface SongbookMakerSettings {
 	songsDirectory: string;
 	/** Comma- or space-separated tags; notes with one are left out. */
 	excludedTags: string;
-	codeBlockName: string;
+	/** Comma-separated info strings of the code blocks that hold songs. */
+	codeBlockNames: string;
 	/** Frontmatter property to group songs by. Empty: no groups. */
 	groupProperty: string;
 	/** Comma-separated values of the group property, in book order. Empty: all. */
@@ -55,7 +56,7 @@ export interface SongbookMakerSettings {
 export const DEFAULT_SETTINGS: SongbookMakerSettings = {
 	songsDirectory: '',
 	excludedTags: 'template',
-	codeBlockName: 'chords',
+	codeBlockNames: 'chords, chordlyrics',
 	groupProperty: '',
 	groups: '',
 	outputFile: '~/Documents/my-songbook.epub',
@@ -77,11 +78,19 @@ export const DEFAULT_SETTINGS: SongbookMakerSettings = {
 };
 
 /** Settings that no longer exist, dropped from saved data on load. */
-const REMOVED_SETTINGS = ['pageLayout', 'titleFont', 'contentFont', 'songTitleOwnPage'];
+const REMOVED_SETTINGS = [
+	'pageLayout',
+	'titleFont',
+	'contentFont',
+	'songTitleOwnPage',
+	'codeBlockName',
+];
 
 /**
  * Fills in defaults for missing settings and carries the old *Page layout*
- * choice over to the section title page toggle.
+ * choice over to the section title page toggle. A custom *Code block name*
+ * becomes the only code block name; the old default `chords` becomes the new
+ * default list.
  */
 export function migrateSettings(
 	data: Record<string, unknown> | null,
@@ -89,6 +98,10 @@ export function migrateSettings(
 	const saved = { ...data };
 	if (saved.pageLayout === 'book' && !('sectionTitleOwnPage' in saved)) {
 		saved.sectionTitleOwnPage = false;
+	}
+	const oldBlockName = typeof saved.codeBlockName === 'string' ? saved.codeBlockName.trim() : '';
+	if (oldBlockName !== '' && oldBlockName !== 'chords' && !('codeBlockNames' in saved)) {
+		saved.codeBlockNames = oldBlockName;
 	}
 	for (const key of REMOVED_SETTINGS) delete saved[key];
 	const settings = { ...DEFAULT_SETTINGS, ...(saved as Partial<SongbookMakerSettings>) };
@@ -105,7 +118,7 @@ export function migrateSettings(
 const TRIMMED_SETTINGS = [
 	'songsDirectory',
 	'excludedTags',
-	'codeBlockName',
+	'codeBlockNames',
 	'groupProperty',
 	'groups',
 	'outputFile',

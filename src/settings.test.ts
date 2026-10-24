@@ -10,6 +10,14 @@ describe('migrateSettings', () => {
 		assert.equal(settings.excludedTags, 'template');
 		assert.ok(!('titleFont' in settings));
 	});
+
+	it('carries a custom code block name over to the code block names', () => {
+		const custom = migrateSettings({ codeBlockName: 'song' });
+		assert.equal(custom.codeBlockNames, 'song');
+		assert.ok(!('codeBlockName' in custom));
+		assert.equal(migrateSettings({ codeBlockName: 'chords' }).codeBlockNames, 'chords, chordlyrics');
+		assert.equal(migrateSettings({ codeBlockName: 'song', codeBlockNames: 'a, b' }).codeBlockNames, 'a, b');
+	});
 });
 
 describe('trimSettings', () => {

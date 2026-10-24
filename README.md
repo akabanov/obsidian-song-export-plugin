@@ -2,14 +2,14 @@
 
 Turn the chord sheets in your vault into a songbook you can learn from anywhere: one EPUB with all your songs (chords over lyrics, guitar tabs and all), ready to read on your e-reader, tablet or phone between practice sessions.
 
-Songbook Maker reads the `chords` / `chordlyrics` code blocks of the [Chord Sheets](https://github.com/olvidalo/obsidian-chord-sheets)
+Songbook Maker reads the `chords` and `chordlyrics` code blocks of the [Chord Sheets](https://github.com/olvidalo/obsidian-chord-sheets)
 and [Chord Lyrics](https://github.com/nevernotmove/obsidian-chordlyrics) plugins, so the songs you already play from in Obsidian go straight into the book.
 
 > **Status:** beta. Until it's listed in Community plugins, install it with [BRAT](#install-with-brat). The export follows [SPEC.md](SPEC.md).
 
 ## How it works
 
-Write songs as ordinary notes and put the playable part in a `chords` code block:
+Write songs as ordinary notes and put the playable part in a `chords` (or `chordlyrics`) code block:
 
 ````markdown
 ```chords
@@ -40,10 +40,10 @@ Click the songbook icon in the left ribbon, or run **Export songs to EPUB**, and
 
 Songbook Maker doesn't render chords in Obsidian; it exports them. Keep using your favourite plugin for writing and playing, and export with this one:
 
-- [**Chord Sheets**](https://github.com/olvidalo/obsidian-chord-sheets): works as is. Its `chords` code blocks, `[Verse]`-style section headers and `%c`/`%t` line markers are what Songbook Maker reads. If you changed Chord Sheets' block name, set the same **Code block name** here.
-- [**Chord Lyrics**](https://github.com/nevernotmove/obsidian-chordlyrics): set **Code block name** to `chordlyrics`.
+- [**Chord Sheets**](https://github.com/olvidalo/obsidian-chord-sheets): works as is. Its `chords` code blocks, `[Verse]`-style section headers and `%c`/`%t` line markers are what Songbook Maker reads. If you changed Chord Sheets' block name, add it to **Code block names** here.
+- [**Chord Lyrics**](https://github.com/nevernotmove/obsidian-chordlyrics): works as is, through its `chordlyrics` code blocks.
 
-Any other chords-over-lyrics code block with `[Section]` headers works the same way.
+Any other chords-over-lyrics code block with `[Section]` headers works the same way: add its name to **Code block names**, separated by commas.
 
 ## Install with BRAT
 
@@ -62,7 +62,7 @@ BRAT checks for new releases and updates the plugin for you. Songbook Maker runs
 |---|---|
 | Songs directory | vault root |
 | Excluded tags | `template` |
-| Code block name | `chords` |
+| Code block names | `chords, chordlyrics` |
 | Output file | `~/Documents/my-songbook.epub` (asks before overwriting) |
 | Show in folder after export | off |
 | Group by property / Groups | none (no groups) / every value, alphabetically |

@@ -1,6 +1,6 @@
 # Songbook Maker — Specification
 
-An Obsidian plugin that exports song notes from the vault into a single EPUB songbook for learning and practice. Songs are written in `chords` code blocks, the format of the [Chord Sheets](https://github.com/olvidalo/obsidian-chord-sheets) plugin. Every song opens with its title on a page of its own. By default each section title also gets a page, with the section's content on the next, like flash cards; a setting lets the sections run together instead (see [Page layout](#page-layout)).
+An Obsidian plugin that exports song notes from the vault into a single EPUB songbook for learning and practice. Songs are written in `chords` or `chordlyrics` code blocks, the formats of the [Chord Sheets](https://github.com/olvidalo/obsidian-chord-sheets) and [Chord Lyrics](https://github.com/nevernotmove/obsidian-chordlyrics) plugins. Every song opens with its title on a page of its own. By default each section title also gets a page, with the section's content on the next, like flash cards; a setting lets the sections run together instead (see [Page layout](#page-layout)).
 
 ## Platform
 
@@ -31,7 +31,7 @@ The settings tab is declared with `getSettingDefinitions()`, so Obsidian renders
 |---|---|---|
 | Songs directory | empty (vault root) | Vault folder, picked with Obsidian's folder suggester, searched recursively. |
 | Excluded tags | `template` | Notes with any of these tags are left out. Typing suggests the tags used in the vault. See [Discovering the songs](#discovering-the-songs). |
-| Code block name | `chords` | Info string of the code blocks that hold song content, the same as Chord Sheets' default. Empty means the default. |
+| Code block names | `chords, chordlyrics` | Comma-separated info strings of the code blocks that hold song content: the defaults of Chord Sheets and Chord Lyrics. Empty means the default. Replaces the single *Code block name* of earlier versions: a custom name carries over as the only name, and the old default `chords` becomes the new default. |
 | Output file | `~/Documents/my-songbook.epub` | Absolute path; a leading `~` expands to the user's home directory. Empty means the default. Missing parent directories are created. A relative path fails the export with an error notice. |
 | Show in folder after export | Off | Toggle. After a successful export, opens the system file manager (Finder, Explorer, …) with the EPUB selected, through Electron's `shell.showItemInFolder`. If that fails, a warning goes to the developer console; the export still counts as successful. |
 | **Groups** | | |
@@ -104,7 +104,7 @@ The index comes first, after the cover and before the first group, as in many so
 
 ## Discovering the songs
 
-A **song note** is a Markdown file under the songs directory (any depth) that contains at least one fenced code block whose info string is the *Code block name* setting (`chords` by default), fenced with ```` ``` ```` or `~~~`. Below, "`chords` block" means such a block.
+A **song note** is a Markdown file under the songs directory (any depth) that contains at least one fenced code block whose info string is one of the *Code block names* (`chords` and `chordlyrics` by default), fenced with ```` ``` ```` or `~~~`. Below, "`chords` block" means a block of any of these names.
 
 Fences follow CommonMark: the info string matches when its first word equals the block name (```` ```chords extra ```` matches, ```` ```chordsx ```` doesn't). A block is closed by a fence of the same character that is at least as long as the opening one, and an unclosed block runs to the end of the note. A fence nested inside a block of another type (for example a `markdown` block showing a `chords` example) doesn't count.
 
@@ -127,7 +127,7 @@ The fleuron scales with the song title: its width is a multiple of the song titl
 - Kobo ignores CSS sizes on inline SVG, so the SVG's own `width` and `height` attributes apply there: 2.56 × the song title size wide (`4em` with the default multipliers). Other readers get 1.92 × the song title size (`3em` by default) from `modern.css`.
 - The gap below the fleuron is one title line (song title size × line-height 1.2) in `book.css`, the same as the empty line between the two title lines. `modern.css` brings it back to `1em`, where it already looks as wide as that empty line.
 
-Only the content of the `chords` code blocks is exported. A song note may have more than one `chords` block; their contents are joined, in order of appearance, before sections are parsed. So a section may continue from one block into the next, and text before the first section header in the first block is discarded.
+Only the content of the `chords` code blocks is exported. A song note may have more than one `chords` block, of the same or different names; their contents are joined, in order of appearance, before sections are parsed. So a section may continue from one block into the next, and text before the first section header in the first block is discarded.
 
 ## Sections
 

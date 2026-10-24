@@ -80,12 +80,13 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 						},
 					},
 					{
-						name: 'Code block name',
-						desc: 'Notes with code blocks of this type are songs; only their contents are exported. Chord Sheets uses chords.',
+						name: 'Code block names',
+						desc: 'Notes with code blocks of these types are songs; only their contents are exported. Separate with commas. Chord Sheets uses chords, Chord Lyrics uses chordlyrics.',
+						aliases: ['code block name'],
 						control: {
 							type: 'text',
-							key: 'codeBlockName',
-							placeholder: DEFAULT_SETTINGS.codeBlockName,
+							key: 'codeBlockNames',
+							placeholder: DEFAULT_SETTINGS.codeBlockNames,
 						},
 					},
 					{

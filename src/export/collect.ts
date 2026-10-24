@@ -15,7 +15,8 @@ export interface CollectedSongs {
 
 export interface CollectOptions {
 	directory: string;
-	blockName: string;
+	/** Info strings of the code blocks that hold song content. */
+	blockNames: string[];
 	titleSplitSequence: string;
 	/** Notes with one of these tags, or a tag nested under one, are left out. */
 	excludedTags: string[];
@@ -52,7 +53,7 @@ export async function collectSongs(app: App, options: CollectOptions): Promise<C
 		const result = parseSong(
 			file.basename,
 			await vault.cachedRead(file),
-			options.blockName,
+			options.blockNames,
 			options.keepSpacing,
 		);
 		if (result.kind === 'skipped') {

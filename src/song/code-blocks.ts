@@ -1,13 +1,13 @@
 const OPENING_FENCE = /^( {0,3})(`{3,}|~{3,})(.*)$/;
 
 /**
- * Returns the contents of the fenced code blocks whose info string is `name`,
- * in order of appearance. Follows CommonMark: a block is closed by a fence of
+ * Returns the contents of the fenced code blocks whose info string is one of
+ * `names`, in order of appearance. Follows CommonMark: a block is closed by a fence of
  * the same character that is at least as long as the opening one, and an
  * unclosed block runs to the end of the document. Blocks of other types are
  * skipped as a whole, so a fence inside them doesn't count.
  */
-export function extractCodeBlocks(markdown: string, name: string): string[] {
+export function extractCodeBlocks(markdown: string, names: string[]): string[] {
 	const lines = markdown.split(/\r\n|\r|\n/);
 	const blocks: string[] = [];
 	let i = 0;
@@ -28,7 +28,7 @@ export function extractCodeBlocks(markdown: string, name: string): string[] {
 			if (isClosingFence(line, fence)) break;
 			body.push(stripIndent(line, indent));
 		}
-		if (info.split(/\s+/)[0] === name) blocks.push(body.join('\n'));
+		if (names.includes(info.split(/\s+/)[0] ?? '')) blocks.push(body.join('\n'));
 	}
 	return blocks;
 }

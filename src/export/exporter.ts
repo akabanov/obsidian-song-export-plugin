@@ -44,7 +44,7 @@ export async function exportSongs(
 	try {
 		const { songs, skipped } = await collectSongs(app, {
 			directory: settings.songsDirectory,
-			blockName: settings.codeBlockName || DEFAULT_SETTINGS.codeBlockName,
+			blockNames: parseCommaList(settings.codeBlockNames || DEFAULT_SETTINGS.codeBlockNames),
 			titleSplitSequence: settings.titleSplitSequence,
 			excludedTags: parseTagList(settings.excludedTags),
 			groupProperty: settings.groupProperty,

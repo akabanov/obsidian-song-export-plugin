@@ -16,12 +16,12 @@ describe('extractCodeBlocks', () => {
 			'G',
 			'```',
 		].join('\n');
-		assert.deepEqual(extractCodeBlocks(md, 'chords'), ['[Verse]\nG']);
+		assert.deepEqual(extractCodeBlocks(md, ['chords']), ['[Verse]\nG']);
 	});
 
 	it('accepts tilde fences and longer closing fences', () => {
 		const md = '~~~chords\n[Intro]\nC\n~~~~\n````chords\n[Outro]\n```\nG\n````';
-		assert.deepEqual(extractCodeBlocks(md, 'chords'), [
+		assert.deepEqual(extractCodeBlocks(md, ['chords']), [
 			'[Intro]\nC',
 			'[Outro]\n```\nG',
 		]);
@@ -29,27 +29,32 @@ describe('extractCodeBlocks', () => {
 
 	it('ignores fences inside blocks of other types', () => {
 		const md = '````markdown\n```chords\n[Verse]\n```\n````';
-		assert.deepEqual(extractCodeBlocks(md, 'chords'), []);
+		assert.deepEqual(extractCodeBlocks(md, ['chords']), []);
 	});
 
 	it('matches the first word of the info string', () => {
-		assert.deepEqual(extractCodeBlocks('``` chords extra\nA\n```', 'chords'), ['A']);
-		assert.deepEqual(extractCodeBlocks('```chordsx\nA\n```', 'chords'), []);
+		assert.deepEqual(extractCodeBlocks('``` chords extra\nA\n```', ['chords']), ['A']);
+		assert.deepEqual(extractCodeBlocks('```chordsx\nA\n```', ['chords']), []);
 	});
 
 	it('runs an unclosed block to the end of the document', () => {
-		assert.deepEqual(extractCodeBlocks('```chords\nA\nB', 'chords'), ['A\nB']);
+		assert.deepEqual(extractCodeBlocks('```chords\nA\nB', ['chords']), ['A\nB']);
 	});
 
 	it('removes the fence indentation from content lines', () => {
-		assert.deepEqual(extractCodeBlocks('  ```chords\n    A\n B\n  ```', 'chords'), [
+		assert.deepEqual(extractCodeBlocks('  ```chords\n    A\n B\n  ```', ['chords']), [
 			'  A\nB',
 		]);
 	});
 
 	it('uses a custom block name', () => {
 		const md = '```chords\nA\n```\n```song\nB\n```';
-		assert.deepEqual(extractCodeBlocks(md, 'song'), ['B']);
+		assert.deepEqual(extractCodeBlocks(md, ['song']), ['B']);
+	});
+
+	it('returns blocks of any of several names, in order of appearance', () => {
+		const md = '```chordlyrics\nA\n```\n```tab\nB\n```\n```chords\nC\n```';
+		assert.deepEqual(extractCodeBlocks(md, ['chords', 'chordlyrics']), ['A', 'C']);
 	});
 });
 
@@ -182,7 +187,7 @@ describe('parseSections', () => {
 describe('parseSong', () => {
 	it('keeps spacing when asked', () => {
 		const md = '```chords\n[Verse]\n  G     C\nAmazing grace\n```';
-		assert.deepEqual(parseSong('x', md, 'chords', true), {
+		assert.deepEqual(parseSong('x', md, ['chords'], true), {
 			kind: 'song',
 			song: { title: 'x', sections: [{ name: 'Verse', lines: ['  G     C', 'Amazing grace'] }] },
 		});
@@ -207,7 +212,7 @@ describe('parseSong', () => {
 			'C G',
 			'~~~',
 		].join('\n');
-		assert.deepEqual(parseSong('Amazing Grace', md, 'chords'), {
+		assert.deepEqual(parseSong('Amazing Grace', md, ['chords']), {
 			kind: 'song',
 			song: {
 				title: 'Amazing Grace',
@@ -220,14 +225,14 @@ describe('parseSong', () => {
 	});
 
 	it('reports notes without chords blocks as not songs', () => {
-		assert.deepEqual(parseSong('x', '# Just a note', 'chords'), {
+		assert.deepEqual(parseSong('x', '# Just a note', ['chords']), {
 			kind: 'not-a-song',
 		});
 	});
 
 	it('skips songs without non-empty sections', () => {
-		assert.equal(parseSong('x', '```chords\nno header\n```', 'chords').kind, 'skipped');
-		assert.equal(parseSong('x', '```chords\n[Verse]\n%t\n```', 'chords').kind, 'skipped');
+		assert.equal(parseSong('x', '```chords\nno header\n```', ['chords']).kind, 'skipped');
+		assert.equal(parseSong('x', '```chords\n[Verse]\n%t\n```', ['chords']).kind, 'skipped');
 	});
 });
 
