@@ -1,13 +1,21 @@
 # Refreshes the settings screenshots in docs/screenshots and commits them to
-# the branch it runs on, if they changed. Releases do this too; run this
-# workflow to refresh them without a release:
+# the branch it runs on, if they changed. It runs on pushes that can change
+# the settings tab, and can be started by hand:
 #
 #     gh workflow run screenshots.yml --ref <branch>
+#
+# Releases refresh the screenshots too.
 
 name: Update settings screenshots
 
 on:
     workflow_dispatch:
+    push:
+        paths:
+            - 'src/ui/**'
+            - 'src/settings.ts'
+            - 'scripts/screenshots.mjs'
+            - '.github/workflows/screenshots.yml'
 
 concurrency:
     group: release

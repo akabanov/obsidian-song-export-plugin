@@ -140,7 +140,7 @@ The `version` input takes an explicit version or an `npm version` keyword:
 ### What the workflow does
 
 1. Installs dependencies, runs the unit tests and the linter. A failure stops the release before anything is changed.
-2. Takes fresh screenshots of the settings in Obsidian and, if they changed, commits them as `Update settings screenshots`, so the images in this README always show the current settings. To refresh them without a release, run the [**Update settings screenshots**](.github/workflows/screenshots.yml) workflow (`gh workflow run screenshots.yml --ref <branch>`).
+2. Takes fresh screenshots of the settings in Obsidian and, if they changed, commits them as `Update settings screenshots`, so the images in this README always show the current settings. Between releases, the [**Update settings screenshots**](.github/workflows/screenshots.yml) workflow does the same on every push that touches the settings tab; after such a push, `git pull` to get its commit.
 3. Bumps the version in `package.json`, `manifest.json` and `versions.json`, commits it to `main` as `Release <version>` and tags it with the bare version (no leading `v`).
 4. Builds `main.js` and has GitHub sign a record that this workflow built it from this commit, so anyone can check that the file in the release wasn't built elsewhere or changed afterward (`gh attestation verify main.js --repo akabanov/obsidian-songbook-maker-plugin`).
 5. Publishes a GitHub release for the tag, with `main.js` and `manifest.json` attached and notes generated from the commits. Versions with a pre-release suffix (`-beta.N`) are marked as pre-releases.
