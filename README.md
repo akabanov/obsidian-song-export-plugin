@@ -2,7 +2,8 @@
 
 Turn the chord sheets in your vault into a songbook you can learn from anywhere: one EPUB with all your songs (chords over lyrics, guitar tabs and all), ready to read on your e-reader, tablet or phone between practice sessions.
 
-Songbook Maker reads the `chords` code blocks of the [Chord Sheets](https://github.com/olvidalo/obsidian-chord-sheets) plugin, `%c`/`%t` line markers included, so the songs you already play from in Obsidian go straight into the book.
+Songbook Maker reads the `chords` / `chordlyrics` code blocks of the [Chord Sheets](https://github.com/olvidalo/obsidian-chord-sheets)
+and [Chord Lyrics](https://github.com/nevernotmove/obsidian-chordlyrics) plugins, so the songs you already play from in Obsidian go straight into the book.
 
 > **Status:** beta. Until it's listed in Community plugins, install it with [BRAT](#install-with-brat). The export follows [SPEC.md](SPEC.md).
 
@@ -25,15 +26,15 @@ That saved a wretch like me
 
 Click the songbook icon in the left ribbon, or run **Export songs to EPUB**, and you get a book where:
 
-- 📖 **Every song is a chapter**, opened by a clean title (`Artist` over `Title`).
+- 📖 **Every song is a chapter**, opened by a clean title (`Artist` over `Title`, if your notes follow an `{author}{separator}{title}` naming convention).
 - 🔖 **Practice with flashcards, or play straight through**: with flashcard-style sections, each section title (`[Verse 1]`, `[Chorus]` …) is the front of a card and its content is on the next page, so you can drill one part at a time. Turn them off for a regular songbook layout.
-- 🖼️ **It has a cover**: a bundled black-and-white illustration, your own image, or none.
+- 🖼️ **It has a cover**: a cool bundled black-and-white illustration, your own image, or none.
 - ✍️ **It reads well on e-ink**: the text uses your reader's font, sized relative to your other books (say, 80% to fit long lines), titles are sized by multipliers you choose, and everything follows your reader's font-size setting. The book works with Kobo's stricter EPUB renderer too.
-- 🎼 **You choose how chords line up**: by default, songs use your reader's font, which is easiest to read on a small screen. Its letters vary in width, so spaces can't place a chord over its syllable; the book drops the extra spaces, and each chord line lists the chords in order above its lyric line. To keep every chord exactly where you put it, turn off **Use regular font**: songs keep their spacing, in a monospaced font embedded in the book.
+- 🎼 **You choose how chords line up**: by default, songs use your reader's font, which is easiest to read on a small screen. Its letters vary in width, so spaces can't place a chord over its syllable; the book drops the extra spaces, and each chord line lists the chords in order above its lyric line. To keep every chord exactly where you put it, turn off **Use regular font**: songs keep their spacing in a monospaced font embedded in the book.
 - 🎸 **Guitar tabs stay readable**: tab lines (`e|---0---|`) are set in a monospaced font embedded in the book, so the strings line up even on readers without a monospaced font of their own.
 - 🗂️ **The table of contents stays short**: songs only, in alphabetical order.
 - 📚 **Group songs your way**: set **Group by property** to a note property, such as `song-status` or `genre`, and the book gets a part for each value, with a title page, the songs under each group in the table of contents, and an index up front. List the values you want in **Groups** to pick them and their order (say, `learning, polishing`).
-- 🏷️ **Templates stay out**: notes tagged `#template` (or any tags you choose) are left out of the book.
+- 🏷️ **Filter out unwanted songs**: use tags to leave out the songs you don't want in your EPUB (e.g. `#template`).
 
 ## Works with your chord plugins
 
@@ -154,3 +155,5 @@ The tag must match the `version` in `manifest.json`, or the workflow fails.
 [0BSD](LICENSE)
 
 Books embed a subset of [Noto Sans Mono](https://fonts.google.com/noto/specimen/Noto+Sans+Mono) for tabs and monospaced songs (`assets/mono.ttf`), © Google, licensed under the [SIL Open Font License 1.1](https://openfontlicense.org).
+
+The ornaments above song and group titles are glyph outlines from [Noto Sans Symbols 2](https://fonts.google.com/noto/specimen/Noto+Sans+Symbols+2): the light swash ornament (U+1F658) and the south west pointing vine leaf (U+1F651), © Google, licensed under the [SIL Open Font License 1.1](https://openfontlicense.org).
