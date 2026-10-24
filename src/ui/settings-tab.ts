@@ -56,6 +56,7 @@ export class SongbookMakerSettingTab extends PluginSettingTab {
 		return [
 			{
 				type: 'group',
+				heading: 'Export',
 				items: [
 					{
 						name: 'Songs directory',
