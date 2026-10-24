@@ -15,6 +15,9 @@ import process from 'node:process';
 const OBSIDIAN_VERSION = '1.14.5';
 const PORT = 9333;
 const VIEWPORT = { width: 1280, height: 2400, deviceScaleFactor: 2 };
+// The settings window: narrow, to keep the images small, and tall enough to
+// show the longest group in full.
+const MODAL = { width: 610, height: 2200 };
 // Room around each group, in CSS pixels.
 const MARGIN = 16;
 const OUTDIR = 'docs/screenshots';
@@ -96,6 +99,12 @@ try {
 		app.setting.open();
 		app.setting.openTabById('${pluginId}');
 		document.activeElement?.blur();
+		Object.assign(app.setting.modalEl.style, {
+			width: '${MODAL.width}px',
+			height: '${MODAL.height}px',
+			maxWidth: 'none',
+			maxHeight: 'none',
+		});
 	`);
 	// The light theme, whatever the system's, once the modal has opened.
 	await evaluate(`document.body.classList.replace('theme-dark', 'theme-light')`);
@@ -107,15 +116,17 @@ try {
 	const count = await evaluate(`${GROUPS}.length`);
 	for (let i = 0; i < count; i++) {
 		// The settings scroll inside the modal: bring the group into view.
-		const { heading, x, y, width, height, visibleTop, visibleBottom } = await evaluate(`(() => {
+		const { heading, x, y, width, height, visibleTop, visibleBottom, visibleRight } = await evaluate(`(() => {
 			const group = ${GROUPS}[${i}];
 			let scroller = group.parentElement;
 			while (scroller.scrollHeight <= scroller.clientHeight) scroller = scroller.parentElement;
 			const visible = scroller.getBoundingClientRect();
+			// Short of the scrollbar.
+			const visibleRight = visible.left + scroller.clientWidth;
 			scroller.scrollTop += group.getBoundingClientRect().top - visible.top - ${2 * MARGIN};
 			const { x, y, width, height } = group.getBoundingClientRect();
 			const heading = group.querySelector('.setting-item-heading')?.textContent ?? '';
-			return { heading, x, y, width, height, visibleTop: visible.top, visibleBottom: visible.bottom };
+			return { heading, x, y, width, height, visibleTop: visible.top, visibleBottom: visible.bottom, visibleRight };
 		})()`);
 		if (!heading) throw new Error('Settings group without a heading');
 		if (y - MARGIN < visibleTop || y + height + MARGIN > visibleBottom) {
@@ -126,7 +137,7 @@ try {
 			clip: {
 				x: x - MARGIN,
 				y: y - MARGIN,
-				width: width + 2 * MARGIN,
+				width: Math.min(width + 2 * MARGIN, visibleRight - x + MARGIN),
 				height: height + 2 * MARGIN,
 				scale: 1,
 			},

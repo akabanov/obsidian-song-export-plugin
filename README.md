@@ -75,13 +75,13 @@ BRAT checks for new releases and updates the plugin for you. Songbook Maker runs
 | Monospace text size | 70% of the text size (50–100%), for tabs and monospaced songs |
 | Section / song / group title size | 1.25× content / 1.25× section / 1.25× song |
 
-<img alt="Export settings" src="docs/screenshots/settings-export.png" width="720">
+![Export settings](docs/screenshots/settings-export.png)
 
-<img alt="Groups settings" src="docs/screenshots/settings-groups.png" width="720">
+![Groups settings](docs/screenshots/settings-groups.png)
 
-<img alt="Book settings" src="docs/screenshots/settings-book.png" width="720">
+![Book settings](docs/screenshots/settings-book.png)
 
-<img alt="Layout settings" src="docs/screenshots/settings-layout.png" width="720">
+![Layout settings](docs/screenshots/settings-layout.png)
 
 ## Privacy and disclosures
 
