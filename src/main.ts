@@ -1,6 +1,6 @@
 import { Plugin } from 'obsidian';
 import { exportSongs } from './export/exporter';
-import { migrateSettings, SongbookMakerSettings } from './settings';
+import { normalizeSettings, SongbookMakerSettings } from './settings';
 import { registerIcon, SONGBOOK_ICON } from './ui/icon';
 import { SongbookMakerSettingTab } from './ui/settings-tab';
 
@@ -38,8 +38,8 @@ export default class SongbookMakerPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = migrateSettings(
-			(await this.loadData()) as Record<string, unknown> | null,
+		this.settings = normalizeSettings(
+			(await this.loadData()) as Partial<SongbookMakerSettings> | null,
 		);
 		if (!this.settings.bookId) {
 			this.settings.bookId = crypto.randomUUID();

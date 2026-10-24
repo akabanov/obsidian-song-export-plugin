@@ -77,34 +77,14 @@ export const DEFAULT_SETTINGS: SongbookMakerSettings = {
 	bookId: '',
 };
 
-/** Settings that no longer exist, dropped from saved data on load. */
-const REMOVED_SETTINGS = [
-	'pageLayout',
-	'titleFont',
-	'contentFont',
-	'songTitleOwnPage',
-	'codeBlockName',
-];
-
 /**
- * Fills in defaults for missing settings and carries the old *Page layout*
- * choice over to the section title page toggle. A custom *Code block name*
- * becomes the only code block name; the old default `chords` becomes the new
- * default list.
+ * Fills in defaults for missing settings and brings numbers and the language
+ * back into range.
  */
-export function migrateSettings(
-	data: Record<string, unknown> | null,
+export function normalizeSettings(
+	data: Partial<SongbookMakerSettings> | null,
 ): SongbookMakerSettings {
-	const saved = { ...data };
-	if (saved.pageLayout === 'book' && !('sectionTitleOwnPage' in saved)) {
-		saved.sectionTitleOwnPage = false;
-	}
-	const oldBlockName = typeof saved.codeBlockName === 'string' ? saved.codeBlockName.trim() : '';
-	if (oldBlockName !== '' && oldBlockName !== 'chords' && !('codeBlockNames' in saved)) {
-		saved.codeBlockNames = oldBlockName;
-	}
-	for (const key of REMOVED_SETTINGS) delete saved[key];
-	const settings = { ...DEFAULT_SETTINGS, ...(saved as Partial<SongbookMakerSettings>) };
+	const settings = { ...DEFAULT_SETTINGS, ...data };
 	settings.textSize = clamp(settings.textSize, MIN_TEXT_SIZE, MAX_TEXT_SIZE);
 	settings.monoTextSize = clamp(settings.monoTextSize, MIN_MONO_TEXT_SIZE, MAX_MONO_TEXT_SIZE);
 	settings.sectionTitleScale = clamp(settings.sectionTitleScale, MIN_SCALE, MAX_SCALE);
@@ -146,7 +126,7 @@ export const MAX_TEXT_SIZE = 130;
 export const MIN_MONO_TEXT_SIZE = 50;
 export const MAX_MONO_TEXT_SIZE = 100;
 
-/** Title size multipliers range from 1 to 3; older versions allowed up to 5. */
+/** Title size multipliers range from 1 to 3. */
 export const MIN_SCALE = 1;
 export const MAX_SCALE = 3;
 

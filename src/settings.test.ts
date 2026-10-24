@@ -1,22 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { DEFAULT_SETTINGS, migrateSettings, trimSettings } from './settings';
+import { DEFAULT_SETTINGS, Language, normalizeSettings, trimSettings } from './settings';
 
-describe('migrateSettings', () => {
-	it('fills in defaults and drops unknown languages and removed settings', () => {
-		const settings = migrateSettings({ bookLanguage: 'xx', titleFont: 'serif', monoTextSize: 10 });
+describe('normalizeSettings', () => {
+	it('fills in defaults and drops unknown languages', () => {
+		const settings = normalizeSettings({ bookLanguage: 'xx' as Language, monoTextSize: 10 });
 		assert.equal(settings.bookLanguage, 'en');
 		assert.equal(settings.monoTextSize, 50);
 		assert.equal(settings.excludedTags, 'template');
-		assert.ok(!('titleFont' in settings));
-	});
-
-	it('carries a custom code block name over to the code block names', () => {
-		const custom = migrateSettings({ codeBlockName: 'song' });
-		assert.equal(custom.codeBlockNames, 'song');
-		assert.ok(!('codeBlockName' in custom));
-		assert.equal(migrateSettings({ codeBlockName: 'chords' }).codeBlockNames, 'chords, chordlyrics');
-		assert.equal(migrateSettings({ codeBlockName: 'song', codeBlockNames: 'a, b' }).codeBlockNames, 'a, b');
 	});
 });
 
