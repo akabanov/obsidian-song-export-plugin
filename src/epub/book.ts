@@ -194,6 +194,9 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 	};
 
 	if (book.groups) {
+		// The index comes first, after the cover, but links to song pages
+		// added below: it is written last and moved to this spine position.
+		const indexPosition = spine.length;
 		const firstPaths = new Map<BookSong, string>();
 		book.groups.forEach((group, i) => {
 			const groupId = `group-${pad(i + 1, 2)}`;
@@ -220,7 +223,8 @@ export function buildEpub(book: Book, deflate: Deflate): Uint8Array {
 			return path ? [{ title: song.title, href: path.replace(/^text\//, '') }] : [];
 		});
 		addPage('index', 'text/index.xhtml', indexPage(lang, indexTitle, entries));
-		toc.push({ title: indexTitle, href: 'text/index.xhtml' });
+		spine.splice(indexPosition, 0, ...spine.splice(-1));
+		toc.unshift({ title: indexTitle, href: 'text/index.xhtml' });
 	} else {
 		for (const song of book.songs) toc.push({ title: song.title, href: addSong(song) });
 	}

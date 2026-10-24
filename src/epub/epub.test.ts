@@ -304,9 +304,10 @@ describe('buildEpub with groups', () => {
 	};
 	const entries = readZip(buildEpub(book, deflate));
 
-	it('opens each group with a title page and ends with the index', () => {
+	it('starts with the index, then opens each group with a title page', () => {
 		assert.deepEqual(spineOf(book), [
 			'cover',
+			'index',
 			'group-01',
 			'song-001',
 			'song-001-content',
@@ -315,7 +316,6 @@ describe('buildEpub with groups', () => {
 			'song-002-content',
 			'song-003',
 			'song-003-content',
-			'index',
 		]);
 		const page = textOf(entries, 'OEBPS/text/group-01.xhtml');
 		assert.match(page, /<body class="page title-page" epub:type="part">/);
@@ -327,10 +327,11 @@ describe('buildEpub with groups', () => {
 	it('nests the songs under their groups in both tables of contents', () => {
 		const nav = textOf(entries, 'OEBPS/nav.xhtml');
 		assert.match(nav, /<li><a href="text\/group-01.xhtml">Learning<\/a>\n<ol>\n<li><a href="text\/song-001.xhtml">Tom &amp; Jerry<\/a><\/li>\n<\/ol>\n<\/li>/);
-		assert.match(nav, /<li><a href="text\/index.xhtml">Index<\/a><\/li>\n<\/ol>\n<\/nav>/);
+		assert.match(nav, /<ol>\n<li><a href="text\/index.xhtml">Index<\/a><\/li>\n<li><a href="text\/group-01.xhtml">/);
 		const ncx = textOf(entries, 'OEBPS/toc.ncx');
 		assert.match(ncx, /<meta name="dtb:depth" content="2"\/>/);
-		assert.match(ncx, /<navPoint id="nav-1" playOrder="1">\n<navLabel><text>Learning<\/text><\/navLabel>\n<content src="text\/group-01.xhtml"\/>\n<navPoint id="nav-2" playOrder="2">/);
+		assert.match(ncx, /<navPoint id="nav-1" playOrder="1">\n<navLabel><text>Index<\/text><\/navLabel>/);
+		assert.match(ncx, /<navPoint id="nav-2" playOrder="2">\n<navLabel><text>Learning<\/text><\/navLabel>\n<content src="text\/group-01.xhtml"\/>\n<navPoint id="nav-3" playOrder="3">/);
 		assert.equal([...ncx.matchAll(/<navPoint /g)].length, 6);
 	});
 

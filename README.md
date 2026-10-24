@@ -32,7 +32,7 @@ Click the songbook icon in the left ribbon, or run **Export songs to EPUB**, and
 - 🎼 **You choose how chords line up**: by default, songs use your reader's font, which is easiest to read on a small screen. Its letters vary in width, so spaces can't place a chord over its syllable; the book drops the extra spaces, and each chord line lists the chords in order above its lyric line. To keep every chord exactly where you put it, turn off **Use regular font**: songs keep their spacing, in a monospaced font embedded in the book.
 - 🎸 **Guitar tabs stay readable**: tab lines (`e|---0---|`) are set in a monospaced font embedded in the book, so the strings line up even on readers without a monospaced font of their own.
 - 🗂️ **The table of contents stays short**: songs only, in alphabetical order.
-- 📚 **Group songs your way**: set **Group by property** to a note property, such as `song-status` or `genre`, and the book gets a part for each value, with a title page, the songs under each group in the table of contents, and an index at the back. List the values you want in **Groups** to pick them and their order (say, `learning, polishing`).
+- 📚 **Group songs your way**: set **Group by property** to a note property, such as `song-status` or `genre`, and the book gets a part for each value, with a title page, the songs under each group in the table of contents, and an index up front. List the values you want in **Groups** to pick them and their order (say, `learning, polishing`).
 - 🏷️ **Templates stay out**: notes tagged `#template` (or any tags you choose) are left out of the book.
 
 ## Works with your chord plugins

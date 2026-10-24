@@ -59,7 +59,7 @@ Text settings other than *Title split sequence* are trimmed when the export read
 
 The output is one EPUB 3 file containing all songs (with an EPUB 2 NCX for older readers). Each song is a chapter.
 
-The book TOC (`nav.xhtml` and `toc.ncx`) lists only song titles — no section entries. Each TOC entry links to the song's title page. With [groups](#groups), the TOC has two levels: the group titles, each linking to the group's title page, with the group's songs under them, followed by the index.
+The book TOC (`nav.xhtml` and `toc.ncx`) lists only song titles — no section entries. Each TOC entry links to the song's title page. With [groups](#groups), the TOC has two levels: the group titles, each linking to the group's title page, with the group's songs under them, after the index.
 
 Songs are ordered alphabetically by note title (case-insensitive, locale-aware). Letters that differ only in case sort together; letters that differ in accents don't. With groups, this is the order within each group.
 
@@ -100,7 +100,7 @@ Each group opens with a title page, centered both ways like a song title page: a
 
 The floret scales with the group title like the song fleuron with the song title: 1.6 × the group title size wide in the SVG's attributes, for Kobo, and 1.2 × in `modern.css`. The gap below it is one group title line in `book.css` and `1em` in `modern.css`.
 
-The book ends with an index, after the last group: every song once, alphabetically, each linking to its first title page. Titles are split under headings by initial letter, uppercase and without accents (`École` under E), except letters of their own in the book's language (Russian Й). Titles that don't start with a letter come first, under `#`. The index is titled in the book's language (*Index*, *Register*, *Указатель*, …; English for others). Without groups, the book has no index.
+The index comes first, after the cover and before the first group, as in many songbooks and fake books, so a song is a tap away from the start of the book. It lists every song once, alphabetically, each linking to its first title page. Titles are split under headings by initial letter, uppercase and without accents (`École` under E), except letters of their own in the book's language (Russian Й). Titles that don't start with a letter come first, under `#`. The index is titled in the book's language (*Index*, *Register*, *Указатель*, …; English for others). Without groups, the book has no index.
 
 ## Discovering the songs
 
