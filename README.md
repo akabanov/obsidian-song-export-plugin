@@ -75,6 +75,26 @@ BRAT checks for new releases and updates the plugin for you. Songbook Maker runs
 | Monospace text size | 70% of the text size (50–100%), for tabs and monospaced songs |
 | Section / song / group title size | 1.25× content / 1.25× section / 1.25× song |
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akabanov/obsidian-songbook-maker-plugin/main/docs/screenshots/settings-export-dark.png">
+  <img alt="Export settings" src="https://raw.githubusercontent.com/akabanov/obsidian-songbook-maker-plugin/main/docs/screenshots/settings-export-light.png" width="720">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akabanov/obsidian-songbook-maker-plugin/main/docs/screenshots/settings-groups-dark.png">
+  <img alt="Groups settings" src="https://raw.githubusercontent.com/akabanov/obsidian-songbook-maker-plugin/main/docs/screenshots/settings-groups-light.png" width="720">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akabanov/obsidian-songbook-maker-plugin/main/docs/screenshots/settings-book-dark.png">
+  <img alt="Book settings" src="https://raw.githubusercontent.com/akabanov/obsidian-songbook-maker-plugin/main/docs/screenshots/settings-book-light.png" width="720">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akabanov/obsidian-songbook-maker-plugin/main/docs/screenshots/settings-layout-dark.png">
+  <img alt="Layout settings" src="https://raw.githubusercontent.com/akabanov/obsidian-songbook-maker-plugin/main/docs/screenshots/settings-layout-light.png" width="720">
+</picture>
+
 ## Privacy and disclosures
 
 - **No network**: Songbook Maker makes no network requests and collects no telemetry.
@@ -97,6 +117,7 @@ npm run dev     # watch build
 npm run build   # production build
 npm test        # unit tests (Node's built-in test runner)
 npm run lint
+npm run screenshots  # settings screenshots for this README (after a build; headless: xvfb-run -a)
 ```
 
 To try a local build, symlink or copy `main.js` and `manifest.json` into `<vault>/.obsidian/plugins/songbook-maker/`. See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
@@ -131,13 +152,16 @@ The `version` input takes an explicit version or an `npm version` keyword:
 ### What the workflow does
 
 1. Installs dependencies, runs the unit tests and the linter. A failure stops the release before anything is changed.
-2. Bumps the version in `package.json`, `manifest.json` and `versions.json`, commits it to `main` as `Release <version>` and tags it with the bare version (no leading `v`).
-3. Builds `main.js` and has GitHub sign a record that this workflow built it from this commit, so anyone can check that the file in the release wasn't built elsewhere or changed afterward (`gh attestation verify main.js --repo akabanov/obsidian-songbook-maker-plugin`).
-4. Publishes a GitHub release for the tag, with `main.js` and `manifest.json` attached and notes generated from the commits. Versions with a pre-release suffix (`-beta.N`) are marked as pre-releases.
+2. Takes fresh screenshots of the settings in Obsidian and, if they changed, commits them as `Update settings screenshots`, so the images in this README always show the current settings.
+3. Bumps the version in `package.json`, `manifest.json` and `versions.json`, commits it to `main` as `Release <version>` and tags it with the bare version (no leading `v`).
+4. Builds `main.js` and has GitHub sign a record that this workflow built it from this commit, so anyone can check that the file in the release wasn't built elsewhere or changed afterward (`gh attestation verify main.js --repo akabanov/obsidian-songbook-maker-plugin`).
+5. Publishes a GitHub release for the tag, with `main.js` and `manifest.json` attached and notes generated from the commits. Versions with a pre-release suffix (`-beta.N`) are marked as pre-releases.
 
 BRAT picks up the new version on its next update check, or right away with **BRAT: Check for updates to all beta plugins**.
 
 After a release, run `git pull` so your local `main` has the version bump commit.
+
+To release a beta from another branch, run the workflow on it (`gh workflow run release.yml --ref <branch>`): the commits and the tag then go to that branch instead of `main`.
 
 ### Release from a hand-made tag
 
