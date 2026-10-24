@@ -23,3 +23,6 @@ data.json
 
 # Bundled unit tests
 .test-build
+
+# The demo vault's plugin settings
+!demo-vault/.obsidian/plugins/songbook-maker/data.json

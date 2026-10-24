@@ -9,8 +9,8 @@
 #
 # `version` is an explicit version or an `npm version` keyword (patch, minor,
 # major, prepatch, preminor, premajor, prerelease; pre-releases use the `beta`
-# id). The workflow refreshes the settings screenshots in docs/screenshots,
-# bumps package.json, manifest.json and versions.json, commits and tags the
+# id). The workflow refreshes the settings screenshots in docs/screenshots
+# and the demo songbook, docs/songs-demo.epub, from demo-vault, bumps package.json, manifest.json and versions.json, commits and tags the
 # bump on the branch it runs on (normally main; pick another with --ref), then
 # builds and publishes the release.
 # Versions with a pre-release suffix (`-beta.N`) are published as GitHub
@@ -66,15 +66,15 @@ jobs:
               uses: actions/cache@v4
               with:
                   path: ~/.obsidian-cache
-                  key: obsidian-${{ hashFiles('scripts/screenshots.mjs') }}
+                  key: obsidian-${{ hashFiles('scripts/demo.mjs') }}
 
-            - name: Update settings screenshots
+            - name: Update screenshots and demo songbook
               if: github.event_name == 'workflow_dispatch'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
                   npm run build
-                  xvfb-run -a npm run screenshots
+                  xvfb-run -a npm run demo
 
             - name: Bump version, commit and tag
               if: github.event_name == 'workflow_dispatch'
@@ -83,8 +83,8 @@ jobs:
               run: |
                   git config user.name 'github-actions[bot]'
                   git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-                  git add docs/screenshots
-                  git diff --cached --quiet || git commit -m 'Update settings screenshots'
+                  git add docs/screenshots docs/songs-demo.epub
+                  git diff --cached --quiet || git commit -m 'Update screenshots and demo songbook'
                   npm version "$VERSION" --preid beta -m 'Release %s'
                   tag="$(node -p 'require("./package.json").version')"
                   git push --atomic origin "HEAD:$GITHUB_REF_NAME" "refs/tags/$tag"

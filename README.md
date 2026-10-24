@@ -5,6 +5,8 @@ Turn the chord sheets in your vault into a songbook you can learn from anywhere:
 Songbook Maker reads the `chords` and `chordlyrics` code blocks of the [Chord Sheets](https://github.com/olvidalo/obsidian-chord-sheets)
 and [Chord Lyrics](https://github.com/nevernotmove/obsidian-chordlyrics) plugins, so the songs you already play from in Obsidian go straight into the book.
 
+📱 **Try it on your e-reader first:** download the [demo songbook](https://github.com/akabanov/obsidian-songbook-maker-plugin/raw/main/docs/songs-demo.epub) and open it on your reader, no Obsidian needed. It's exported from the [demo vault](demo-vault) with each release: Amazing Grace in full, and placeholder lyrics for the other songs, grouped by `song-status` into learning, polishing and ready.
+
 > **Status:** beta. Until it's listed in Community plugins, install it with [BRAT](#install-with-brat). The export follows [SPEC.md](SPEC.md).
 
 ## How it works
@@ -105,7 +107,7 @@ npm run dev     # watch build
 npm run build   # production build
 npm test        # unit tests (Node's built-in test runner)
 npm run lint
-npm run screenshots  # settings screenshots for this README (after a build; headless: xvfb-run -a)
+npm run demo    # from demo-vault: settings screenshots and the demo songbook in docs/ (after a build; headless: xvfb-run -a)
 ```
 
 To try a local build, symlink or copy `main.js` and `manifest.json` into `<vault>/.obsidian/plugins/songbook-maker/`. See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
@@ -140,7 +142,7 @@ The `version` input takes an explicit version or an `npm version` keyword:
 ### What the workflow does
 
 1. Installs dependencies, runs the unit tests and the linter. A failure stops the release before anything is changed.
-2. Takes fresh screenshots of the settings in Obsidian and, if they changed, commits them as `Update settings screenshots`, so the images in this README always show the current settings. Between releases, the [**Update settings screenshots**](.github/workflows/screenshots.yml) workflow does the same on every push that touches the settings tab; after such a push, `git pull` to get its commit.
+2. Opens the [demo vault](demo-vault) in Obsidian, takes fresh screenshots of the settings and exports the [demo songbook](docs/songs-demo.epub), then commits them as `Update screenshots and demo songbook`, so this README always shows the current settings and links to a book made by the current version. Between releases, the [**Update settings screenshots**](.github/workflows/screenshots.yml) workflow refreshes the screenshots (not the book) on every push that touches the settings tab; after such a push, `git pull` to get its commit.
 3. Bumps the version in `package.json`, `manifest.json` and `versions.json`, commits it to `main` as `Release <version>` and tags it with the bare version (no leading `v`).
 4. Builds `main.js` and has GitHub sign a record that this workflow built it from this commit, so anyone can check that the file in the release wasn't built elsewhere or changed afterward (`gh attestation verify main.js --repo akabanov/obsidian-songbook-maker-plugin`).
 5. Publishes a GitHub release for the tag, with `main.js` and `manifest.json` attached and notes generated from the commits. Versions with a pre-release suffix (`-beta.N`) are marked as pre-releases.

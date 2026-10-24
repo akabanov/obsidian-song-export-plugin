@@ -1,10 +1,10 @@
 # Refreshes the settings screenshots in docs/screenshots and commits them to
-# the branch it runs on, if they changed. It runs on pushes that can change
+# the branch it runs on, if they changed. The demo songbook is left as is. It runs on pushes that can change
 # the settings tab, and can be started by hand:
 #
 #     gh workflow run screenshots.yml --ref <branch>
 #
-# Releases refresh the screenshots too.
+# Releases refresh the screenshots too, and the demo songbook.
 
 name: Update settings screenshots
 
@@ -14,7 +14,8 @@ on:
         paths:
             - 'src/ui/**'
             - 'src/settings.ts'
-            - 'scripts/screenshots.mjs'
+            - 'scripts/demo.mjs'
+            - 'demo-vault/.obsidian/**'
             - '.github/workflows/screenshots.yml'
 
 concurrency:
@@ -42,14 +43,14 @@ jobs:
               uses: actions/cache@v4
               with:
                   path: ~/.obsidian-cache
-                  key: obsidian-${{ hashFiles('scripts/screenshots.mjs') }}
+                  key: obsidian-${{ hashFiles('scripts/demo.mjs') }}
 
             - name: Take screenshots
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
                   npm run build
-                  xvfb-run -a npm run screenshots
+                  xvfb-run -a npm run demo
 
             - name: Commit changed screenshots
               run: |

@@ -1,12 +1,14 @@
-// Screenshots each group of the settings tab, with Obsidian's default light
-// theme, into docs/screenshots/settings-<group>.png.
+// Opens demo-vault in Obsidian, then:
+// - screenshots each group of the settings tab, with Obsidian's default light
+//   theme, into docs/screenshots/settings-<group>.png;
+// - exports the demo songbook into docs/songs-demo.epub.
 // The README links to these files, so they stay current without editing it.
 //
 // Needs a built main.js (`npm run build`) and a display; on a headless Linux
 // machine, run it under `xvfb-run -a`.
 import ObsidianLauncher from 'obsidian-launcher';
 import CDP from 'chrome-remote-interface';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
@@ -21,13 +23,7 @@ const MODAL_WIDTH = 860;
 // Room around each group, in CSS pixels.
 const MARGIN = 16;
 const OUTDIR = 'docs/screenshots';
-
-// Shows every setting: a group property reveals the group settings.
-const PLUGIN_DATA = {
-	groupProperty: 'song-status',
-	groups: 'learning, polishing',
-	bookId: 'screenshots',
-};
+const BOOK = 'docs/songs-demo.epub';
 
 const GROUPS = `[...app.setting.activeTab.containerEl.querySelectorAll('.setting-group')]`;
 
@@ -48,16 +44,13 @@ async function waitFor(what, attempt) {
 
 const { id: pluginId } = JSON.parse(readFileSync('manifest.json', 'utf8'));
 const launcher = new ObsidianLauncher();
-const emptyVault = mkdtempSync(join(tmpdir(), 'songbook-screenshots-'));
+// A copy, so that Obsidian's own files stay out of the project.
 const vault = await launcher.setupVault({
-	vault: emptyVault,
+	vault: 'demo-vault',
 	copy: true,
 	plugins: [process.cwd()],
 });
-writeFileSync(
-	join(vault, '.obsidian', 'plugins', pluginId, 'data.json'),
-	JSON.stringify(PLUGIN_DATA),
-);
+const bookDir = mkdtempSync(join(tmpdir(), 'songbook-demo-'));
 
 const { proc, configDir } = await launcher.launch({
 	appVersion: OBSIDIAN_VERSION,
@@ -144,10 +137,25 @@ try {
 		writeFileSync(file, Buffer.from(data, 'base64'));
 		console.log(file);
 	}
+
+	// Into a new file, as replacing one asks first. The changed setting isn't
+	// saved.
+	const bookFile = join(bookDir, 'songs-demo.epub');
+	await waitFor('the metadata cache', () =>
+		evaluate(`app.vault.getMarkdownFiles().every((file) => app.metadataCache.getFileCache(file))`),
+	);
+	await evaluate(`(async () => {
+		const plugin = app.plugins.plugins['${pluginId}'];
+		plugin.settings.outputFile = ${JSON.stringify(bookFile)};
+		await plugin.exportSongs();
+	})()`);
+	if (!existsSync(bookFile)) throw new Error('The songbook export failed');
+	copyFileSync(bookFile, BOOK);
+	console.log(BOOK);
 } finally {
 	await client?.close();
 	// Obsidian writes to its config dir until it exits.
 	const exited = new Promise((resolve) => proc.once('exit', resolve));
 	if (proc.kill()) await exited;
-	for (const dir of [emptyVault, vault, configDir]) rmSync(dir, { recursive: true, force: true });
+	for (const dir of [bookDir, vault, configDir]) rmSync(dir, { recursive: true, force: true });
 }
