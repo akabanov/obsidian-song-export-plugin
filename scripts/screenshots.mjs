@@ -14,10 +14,8 @@ import process from 'node:process';
 // Pinned, so the screenshots change only when the settings do.
 const OBSIDIAN_VERSION = '1.14.5';
 const PORT = 9333;
-const VIEWPORT = { width: 1280, height: 2400, deviceScaleFactor: 2 };
-// The settings window: narrow, to keep the images small, and tall enough to
-// show the longest group in full.
-const MODAL = { width: 610, height: 2200 };
+// 1x: READMEs show images pixel for pixel.
+const VIEWPORT = { width: 1280, height: 2400, deviceScaleFactor: 1 };
 // Room around each group, in CSS pixels.
 const MARGIN = 16;
 const OUTDIR = 'docs/screenshots';
@@ -93,18 +91,12 @@ try {
 	await client.Emulation.setDeviceMetricsOverride({ ...VIEWPORT, mobile: false });
 
 	// Settings open in a modal rather than a separate window, so they render
-	// in this page; the viewport is tall enough to show every group in full.
+	// in this page; the tall viewport leaves room for the longest group.
 	await evaluate(`
 		app.setting.shouldUsePopout = () => false;
 		app.setting.open();
 		app.setting.openTabById('${pluginId}');
 		document.activeElement?.blur();
-		Object.assign(app.setting.modalEl.style, {
-			width: '${MODAL.width}px',
-			height: '${MODAL.height}px',
-			maxWidth: 'none',
-			maxHeight: 'none',
-		});
 	`);
 	// The light theme, whatever the system's, once the modal has opened.
 	await evaluate(`document.body.classList.replace('theme-dark', 'theme-light')`);
