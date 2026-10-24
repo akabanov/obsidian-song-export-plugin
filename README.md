@@ -75,13 +75,13 @@ BRAT checks for new releases and updates the plugin for you. Songbook Maker runs
 | Monospace text size | 70% of the text size (50–100%), for tabs and monospaced songs |
 | Section / song / group title size | 1.25× content / 1.25× section / 1.25× song |
 
-![Export settings](docs/screenshots/settings-export.png)
+<img alt="Export settings" src="docs/screenshots/settings-export.png" width="599">
 
-![Groups settings](docs/screenshots/settings-groups.png)
+<img alt="Groups settings" src="docs/screenshots/settings-groups.png" width="599">
 
-![Book settings](docs/screenshots/settings-book.png)
+<img alt="Book settings" src="docs/screenshots/settings-book.png" width="599">
 
-![Layout settings](docs/screenshots/settings-layout.png)
+<img alt="Layout settings" src="docs/screenshots/settings-layout.png" width="599">
 
 ## Privacy and disclosures
 
@@ -140,7 +140,7 @@ The `version` input takes an explicit version or an `npm version` keyword:
 ### What the workflow does
 
 1. Installs dependencies, runs the unit tests and the linter. A failure stops the release before anything is changed.
-2. Takes fresh screenshots of the settings in Obsidian and, if they changed, commits them as `Update settings screenshots`, so the images in this README always show the current settings.
+2. Takes fresh screenshots of the settings in Obsidian and, if they changed, commits them as `Update settings screenshots`, so the images in this README always show the current settings. To refresh them without a release, run the [**Update settings screenshots**](.github/workflows/screenshots.yml) workflow (`gh workflow run screenshots.yml --ref <branch>`).
 3. Bumps the version in `package.json`, `manifest.json` and `versions.json`, commits it to `main` as `Release <version>` and tags it with the bare version (no leading `v`).
 4. Builds `main.js` and has GitHub sign a record that this workflow built it from this commit, so anyone can check that the file in the release wasn't built elsewhere or changed afterward (`gh attestation verify main.js --repo akabanov/obsidian-songbook-maker-plugin`).
 5. Publishes a GitHub release for the tag, with `main.js` and `manifest.json` attached and notes generated from the commits. Versions with a pre-release suffix (`-beta.N`) are marked as pre-releases.

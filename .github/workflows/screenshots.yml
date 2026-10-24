@@ -1,0 +1,56 @@
+# Refreshes the settings screenshots in docs/screenshots and commits them to
+# the branch it runs on, if they changed. Releases do this too; run this
+# workflow to refresh them without a release:
+#
+#     gh workflow run screenshots.yml --ref <branch>
+
+name: Update settings screenshots
+
+on:
+    workflow_dispatch:
+
+concurrency:
+    group: release
+    cancel-in-progress: false
+
+jobs:
+    screenshots:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/checkout@v6
+
+            - name: Use Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  cache: 'npm'
+
+            - name: Install
+              run: npm ci
+
+            - name: Cache Obsidian
+              uses: actions/cache@v4
+              with:
+                  path: ~/.obsidian-cache
+                  key: obsidian-${{ hashFiles('scripts/screenshots.mjs') }}
+
+            - name: Take screenshots
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  npm run build
+                  xvfb-run -a npm run screenshots
+
+            - name: Commit changed screenshots
+              run: |
+                  git config user.name 'github-actions[bot]'
+                  git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+                  git add docs/screenshots
+                  if git diff --cached --quiet; then
+                    echo 'Screenshots unchanged.'
+                  else
+                    git commit -m 'Update settings screenshots'
+                    git push origin "HEAD:$GITHUB_REF_NAME"
+                  fi

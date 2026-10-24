@@ -14,8 +14,10 @@ import process from 'node:process';
 // Pinned, so the screenshots change only when the settings do.
 const OBSIDIAN_VERSION = '1.14.5';
 const PORT = 9333;
-// 1x: READMEs show images pixel for pixel.
-const VIEWPORT = { width: 1280, height: 2400, deviceScaleFactor: 1 };
+// 2x, for sharp text on scaled screens; the README halves the image width.
+const VIEWPORT = { width: 1280, height: 2400, deviceScaleFactor: 2 };
+// A narrower settings window than the default, for smaller images.
+const MODAL_WIDTH = 860;
 // Room around each group, in CSS pixels.
 const MARGIN = 16;
 const OUTDIR = 'docs/screenshots';
@@ -62,7 +64,9 @@ const { proc, configDir } = await launcher.launch({
 	installerVersion: OBSIDIAN_VERSION,
 	vault,
 	// The sandbox can't start on CI runners, and isn't needed for a test vault.
-	args: [`--remote-debugging-port=${PORT}`, '--no-sandbox'],
+	// Grayscale text antialiasing, as subpixel colour fringes look blurry once
+	// the image is scaled.
+	args: [`--remote-debugging-port=${PORT}`, '--no-sandbox', '--disable-lcd-text'],
 });
 
 let client;
@@ -97,6 +101,7 @@ try {
 		app.setting.open();
 		app.setting.openTabById('${pluginId}');
 		document.activeElement?.blur();
+		app.setting.modalEl.style.width = '${MODAL_WIDTH}px';
 	`);
 	// The light theme, whatever the system's, once the modal has opened.
 	await evaluate(`document.body.classList.replace('theme-dark', 'theme-light')`);
