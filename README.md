@@ -75,25 +75,13 @@ BRAT checks for new releases and updates the plugin for you. Songbook Maker runs
 | Monospace text size | 70% of the text size (50–100%), for tabs and monospaced songs |
 | Section / song / group title size | 1.25× content / 1.25× section / 1.25× song |
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akabanov/obsidian-songbook-maker-plugin/main/docs/screenshots/settings-export-dark.png">
-  <img alt="Export settings" src="https://raw.githubusercontent.com/akabanov/obsidian-songbook-maker-plugin/main/docs/screenshots/settings-export-light.png" width="720">
-</picture>
+<img alt="Export settings" src="docs/screenshots/settings-export.png" width="720">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akabanov/obsidian-songbook-maker-plugin/main/docs/screenshots/settings-groups-dark.png">
-  <img alt="Groups settings" src="https://raw.githubusercontent.com/akabanov/obsidian-songbook-maker-plugin/main/docs/screenshots/settings-groups-light.png" width="720">
-</picture>
+<img alt="Groups settings" src="docs/screenshots/settings-groups.png" width="720">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akabanov/obsidian-songbook-maker-plugin/main/docs/screenshots/settings-book-dark.png">
-  <img alt="Book settings" src="https://raw.githubusercontent.com/akabanov/obsidian-songbook-maker-plugin/main/docs/screenshots/settings-book-light.png" width="720">
-</picture>
+<img alt="Book settings" src="docs/screenshots/settings-book.png" width="720">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akabanov/obsidian-songbook-maker-plugin/main/docs/screenshots/settings-layout-dark.png">
-  <img alt="Layout settings" src="https://raw.githubusercontent.com/akabanov/obsidian-songbook-maker-plugin/main/docs/screenshots/settings-layout-light.png" width="720">
-</picture>
+<img alt="Layout settings" src="docs/screenshots/settings-layout.png" width="720">
 
 ## Privacy and disclosures
 

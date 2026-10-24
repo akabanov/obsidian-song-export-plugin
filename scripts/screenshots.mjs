@@ -1,5 +1,5 @@
-// Screenshots each group of the settings tab, in light and dark, with
-// Obsidian's default theme, into docs/screenshots/settings-<group>-<theme>.png.
+// Screenshots each group of the settings tab, with Obsidian's default light
+// theme, into docs/screenshots/settings-<group>.png.
 // The README links to these files, so they stay current without editing it.
 //
 // Needs a built main.js (`npm run build`) and a display; on a headless Linux
@@ -97,46 +97,44 @@ try {
 		app.setting.openTabById('${pluginId}');
 		document.activeElement?.blur();
 	`);
-	// Let the modal finish opening.
+	// The light theme, whatever the system's, once the modal has opened.
+	await evaluate(`document.body.classList.replace('theme-dark', 'theme-light')`);
 	await sleep(1000);
 
+	// Groups that were renamed or removed leave no stale images behind.
+	rmSync(OUTDIR, { recursive: true, force: true });
 	mkdirSync(OUTDIR, { recursive: true });
-	for (const theme of ['light', 'dark']) {
-		await evaluate(`document.body.classList.remove('theme-light', 'theme-dark');
-			document.body.classList.add('theme-${theme}');`);
-		await sleep(1000);
-		const count = await evaluate(`${GROUPS}.length`);
-		for (let i = 0; i < count; i++) {
-			// The settings scroll inside the modal: bring the group into view.
-			const { heading, x, y, width, height, visibleTop, visibleBottom } = await evaluate(`(() => {
-				const group = ${GROUPS}[${i}];
-				let scroller = group.parentElement;
-				while (scroller.scrollHeight <= scroller.clientHeight) scroller = scroller.parentElement;
-				const visible = scroller.getBoundingClientRect();
-				scroller.scrollTop += group.getBoundingClientRect().top - visible.top - ${2 * MARGIN};
-				const { x, y, width, height } = group.getBoundingClientRect();
-				const heading = group.querySelector('.setting-item-heading')?.textContent ?? '';
-				return { heading, x, y, width, height, visibleTop: visible.top, visibleBottom: visible.bottom };
-			})()`);
-			if (!heading) throw new Error('Settings group without a heading');
-			if (y - MARGIN < visibleTop || y + height + MARGIN > visibleBottom) {
-				throw new Error(`Settings group ${heading} is too tall for the viewport`);
-			}
-			const { data } = await client.Page.captureScreenshot({
-				format: 'png',
-				clip: {
-					x: x - MARGIN,
-					y: y - MARGIN,
-					width: width + 2 * MARGIN,
-					height: height + 2 * MARGIN,
-					scale: 1,
-				},
-			});
-			const slug = heading.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-			const file = join(OUTDIR, `settings-${slug}-${theme}.png`);
-			writeFileSync(file, Buffer.from(data, 'base64'));
-			console.log(file);
+	const count = await evaluate(`${GROUPS}.length`);
+	for (let i = 0; i < count; i++) {
+		// The settings scroll inside the modal: bring the group into view.
+		const { heading, x, y, width, height, visibleTop, visibleBottom } = await evaluate(`(() => {
+			const group = ${GROUPS}[${i}];
+			let scroller = group.parentElement;
+			while (scroller.scrollHeight <= scroller.clientHeight) scroller = scroller.parentElement;
+			const visible = scroller.getBoundingClientRect();
+			scroller.scrollTop += group.getBoundingClientRect().top - visible.top - ${2 * MARGIN};
+			const { x, y, width, height } = group.getBoundingClientRect();
+			const heading = group.querySelector('.setting-item-heading')?.textContent ?? '';
+			return { heading, x, y, width, height, visibleTop: visible.top, visibleBottom: visible.bottom };
+		})()`);
+		if (!heading) throw new Error('Settings group without a heading');
+		if (y - MARGIN < visibleTop || y + height + MARGIN > visibleBottom) {
+			throw new Error(`Settings group ${heading} is too tall for the viewport`);
 		}
+		const { data } = await client.Page.captureScreenshot({
+			format: 'png',
+			clip: {
+				x: x - MARGIN,
+				y: y - MARGIN,
+				width: width + 2 * MARGIN,
+				height: height + 2 * MARGIN,
+				scale: 1,
+			},
+		});
+		const slug = heading.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+		const file = join(OUTDIR, `settings-${slug}.png`);
+		writeFileSync(file, Buffer.from(data, 'base64'));
+		console.log(file);
 	}
 } finally {
 	await client?.close();
